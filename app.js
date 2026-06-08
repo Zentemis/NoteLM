@@ -389,8 +389,8 @@ async function loadModel() {
         const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
         dom.loadingText.textContent = 'Initializing model…';
 
-        // Detect WebGPU support
-        let device = 'cpu';
+        // Detect WebGPU support, fall back to WASM
+        let device = 'wasm';
         if (navigator.gpu) {
             try {
                 const adapter = await navigator.gpu.requestAdapter();
@@ -399,12 +399,12 @@ async function loadModel() {
                     dom.loadingText.textContent = 'Using WebGPU acceleration';
                 }
             } catch (e) {
-                console.warn('[NoteLM] WebGPU not available, falling back to WASM/CPU:', e.message);
+                console.warn('[NoteLM] WebGPU not available, falling back to WASM:', e.message);
             }
         } else {
-            console.warn('[NoteLM] navigator.gpu not found, using CPU backend');
+            console.warn('[NoteLM] navigator.gpu not found, using WASM backend');
         }
-        dom.loadingText.textContent = `Loading model (${device === 'webgpu' ? 'WebGPU' : 'CPU/WASM'})…`;
+        dom.loadingText.textContent = `Loading model (${device === 'webgpu' ? 'WebGPU' : 'WASM'})…`;
 
         kokoroModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
             dtype: device === 'webgpu' ? 'fp32' : 'q8',
