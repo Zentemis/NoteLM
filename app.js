@@ -121,6 +121,62 @@ function toggleEditor(id) {
     renderSpeakers();
 }
 
+// Speaker editor portal — rendered at body level, positioned via JS
+function positionEditor(chipEl) {
+    const rect = chipEl.getBoundingClientRect();
+    const editor = document.getElementById('speakerEditorPortal');
+    if (!editor) return;
+    editor.style.display = 'block';
+    editor.style.position = 'fixed';
+    editor.style.top = (rect.bottom + 6) + 'px';
+    editor.style.left = (rect.left + rect.width / 2) + 'px';
+    editor.style.transform = 'translateX(-50%)';
+    editor.style.zIndex = '10000';
+}
+
+function renderSpeakerEditor(speaker) {
+    const portal = document.getElementById('speakerEditorPortal');
+    if (!portal) return;
+    portal.innerHTML = `
+        <div class="editor-arrow"></div>
+        <div class="editor-field">
+            <span class="editor-label">Name</span>
+            <input class="editor-input" type="text" value="${speaker.name}" id="editorNameInput">
+        </div>
+        <div class="editor-field">
+            <span class="editor-label">Voice</span>
+            <select class="editor-select" id="editorVoiceSelect">
+                ${VOICE_KEYS.map(v => {
+                    const vo = VOICES[v];
+                    const sel = v === speaker.voice ? 'selected' : '';
+                    return `<option value="${v}" ${sel}>${vo.name} (${vo.gender}, ${vo.lang})</option>`;
+                }).join('')}
+            </select>
+        </div>
+    `;
+    // Bind
+    const nameInput = document.getElementById('editorNameInput');
+    const voiceSelect = document.getElementById('editorVoiceSelect');
+    nameInput.oninput = () => {
+        speaker.name = nameInput.value;
+        // Live update chip text
+        const chipName = document.querySelector(`[data-chip-id="${speaker.id}"] .chip-name`);
+        if (chipName) chipName.textContent = nameInput.value;
+    };
+    nameInput.onchange = () => renderSpeakers();
+    voiceSelect.onchange = () => {
+        speaker.voice = voiceSelect.value;
+        renderSpeakers();
+    };
+    nameInput.focus();
+}
+
+function closeEditor() {
+    openEditorId = null;
+    const portal = document.getElementById('speakerEditorPortal');
+    if (portal) { portal.style.display = 'none'; portal.innerHTML = ''; }
+}
+
 function renderSpeakers() {
     dom.speakersList.innerHTML = speakers.map(s => `
         <div class="speaker-chip${openEditorId === s.id ? ' active' : ''}" data-chip-id="${s.id}">
@@ -128,33 +184,26 @@ function renderSpeakers() {
             <span class="chip-name">${s.name}</span>
             <span class="chip-voice">${voiceLabel(s.voice)}</span>
             <button class="chip-remove" data-remove="${s.id}" title="Remove">×</button>
-            ${openEditorId === s.id ? `
-                <div class="speaker-editor open" onclick="event.stopPropagation()">
-                    <div class="editor-field">
-                        <span class="editor-label">Name</span>
-                        <input class="editor-input" type="text" value="${s.name}" data-edit="name" data-id="${s.id}">
-                    </div>
-                    <div class="editor-field">
-                        <span class="editor-label">Voice</span>
-                        <select class="editor-select" data-edit="voice" data-id="${s.id}">
-                            ${VOICE_KEYS.map(v => {
-                                const vo = VOICES[v];
-                                const sel = v === s.voice ? 'selected' : '';
-                                return `<option value="${v}" ${sel}>${vo.name} (${vo.gender}, ${vo.lang})</option>`;
-                            }).join('')}
-                        </select>
-                    </div>
-                </div>
-            ` : ''}
         </div>
     `).join('');
 
-    // Bind chip click -> toggle editor
+    // Bind chip clicks
     dom.speakersList.querySelectorAll('.speaker-chip').forEach(chip => {
         chip.addEventListener('click', e => {
-            // Don't toggle if clicking remove btn, editor inputs, or inside editor
-            if (e.target.closest('.chip-remove') || e.target.closest('.speaker-editor')) return;
-            toggleEditor(chip.dataset.chipId);
+            if (e.target.closest('.chip-remove')) return;
+            const id = chip.dataset.chipId;
+            if (openEditorId === id) {
+                closeEditor();
+            } else {
+                openEditorId = id;
+                renderSpeakers();
+                const spk = getSpeaker(id);
+                const chipEl = document.querySelector(`[data-chip-id="${id}"]`);
+                if (spk && chipEl) {
+                    positionEditor(chipEl);
+                    renderSpeakerEditor(spk);
+                }
+            }
         });
     });
 
@@ -162,36 +211,15 @@ function renderSpeakers() {
     dom.speakersList.querySelectorAll('.chip-remove').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
+            closeEditor();
             removeSpeaker(btn.dataset.remove);
         });
     });
 
-    // Bind editor inputs — update speaker on change
-    dom.speakersList.querySelectorAll('.editor-input, .editor-select').forEach(el => {
-        el.addEventListener('change', () => {
-            const spk = getSpeaker(el.dataset.id);
-            if (spk) spk[el.dataset.edit] = el.value;
-            renderSpeakers();
-        });
-        el.addEventListener('input', () => {
-            // Live update name in chip
-            const spk = getSpeaker(el.dataset.id);
-            if (spk && el.dataset.edit === 'name') spk.name = el.value;
-        });
-    });
-
-    // Close editor on outside click
+    // Reposition editor if open
     if (openEditorId) {
-        requestAnimationFrame(() => {
-            const handler = e => {
-                if (!e.target.closest(`[data-chip-id="${openEditorId}"]`)) {
-                    openEditorId = null;
-                    document.removeEventListener('click', handler);
-                    renderSpeakers();
-                }
-            };
-            document.addEventListener('click', handler);
-        });
+        const chipEl = document.querySelector(`[data-chip-id="${openEditorId}"]`);
+        if (chipEl) positionEditor(chipEl);
     }
 
     updateLineSpeakerOptions();
@@ -276,8 +304,9 @@ function closePasteModal(e) {
     dom.pasteOverlay.style.display = 'none';
 }
 
-function parseAndImport(e) {
-    if (e) e.stopPropagation();
+function parseAndImport() {
+    console.log('[Paste] Starting parse...');
+
     const raw = dom.pasteTextarea.value.trim();
     if (!raw) { setStatus('Paste some text first!', 'error'); return; }
 
@@ -286,23 +315,27 @@ function parseAndImport(e) {
     const nameSet = new Set();
 
     for (const line of lines) {
-        // Match "Name: text" pattern — require at least 2 chars for name
-        const m = line.match(/^(.{2,}?)\s*:\s*(.+)$/);
-        if (m) {
-            parsed.push({ name: m[1].trim(), text: m[2].trim() });
-            nameSet.add(m[1].trim());
+        // Simple: find first colon, split there
+        const colonIdx = line.indexOf(':');
+        if (colonIdx > 0 && colonIdx < line.length - 1) {
+            const name = line.substring(0, colonIdx).trim();
+            const text = line.substring(colonIdx + 1).trim();
+            if (name.length > 0 && text.length > 0) {
+                parsed.push({ name, text });
+                nameSet.add(name);
+            }
         }
     }
 
     if (!parsed.length) {
-        setStatus('No "Speaker: text" lines found. Use format: Alice: Hello!', 'error');
+        setStatus('No "Speaker: text" lines found. Use: Alice: Hello!', 'error');
         return;
     }
 
-    // Close modal first
+    // Close modal
     dom.pasteOverlay.style.display = 'none';
 
-    // Map names -> speaker ids (reuse existing, create new)
+    // Map names -> speaker ids
     const nameMap = {};
     let vi = 0;
     for (const name of nameSet) {
@@ -316,7 +349,7 @@ function parseAndImport(e) {
     }
 
     scriptLines = parsed.map((p, i) => ({
-        id: 'p' + Date.now() + i,
+        id: 'p' + Date.now() + '_' + i,
         speakerId: nameMap[p.name],
         text: p.text,
     }));
@@ -578,7 +611,6 @@ function downloadWav() {
 }
 
 // --- Event Bindings ---
-// Use direct onclick for reliability
 dom.addSpeakerBtn.onclick = () => addSpeaker();
 dom.addLineBtn.onclick = () => addScriptLine();
 dom.clearScriptBtn.onclick = () => { scriptLines = []; renderScriptLines(); };
@@ -589,34 +621,42 @@ dom.downloadBtn.onclick = downloadWav;
 dom.playPauseBtn.onclick = () => isPlaying ? pauseAudio() : playAudio();
 dom.seekBar.oninput = e => seekTo(parseFloat(e.target.value));
 
-// Paste modal — explicit handlers
-dom.pasteScriptBtn.onclick = e => {
+// Paste modal
+dom.pasteScriptBtn.addEventListener('click', e => {
     e.stopPropagation();
     dom.pasteOverlay.style.display = 'flex';
     dom.pasteTextarea.value = '';
     setTimeout(() => dom.pasteTextarea.focus(), 50);
-};
+});
 
-dom.pasteCancelBtn.onclick = e => {
+dom.pasteCancelBtn.addEventListener('click', e => {
     e.stopPropagation();
     dom.pasteOverlay.style.display = 'none';
-};
+});
 
-dom.pasteParseBtn.onclick = e => {
+dom.pasteParseBtn.addEventListener('click', e => {
     e.stopPropagation();
     parseAndImport();
-};
+});
 
-// Close paste modal on backdrop click
 dom.pasteOverlay.addEventListener('mousedown', e => {
     if (e.target === dom.pasteOverlay) dom.pasteOverlay.style.display = 'none';
 });
 
-// Ctrl+Enter in paste textarea triggers import
 dom.pasteTextarea.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         parseAndImport();
+    }
+});
+
+// Close speaker editor portal on outside click
+document.addEventListener('mousedown', e => {
+    if (!openEditorId) return;
+    const portal = document.getElementById('speakerEditorPortal');
+    if (portal && !portal.contains(e.target) && !e.target.closest('.speaker-chip')) {
+        closeEditor();
+        renderSpeakers();
     }
 });
 
