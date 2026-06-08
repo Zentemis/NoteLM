@@ -489,6 +489,9 @@ async function generateKokoro(text, voice) {
 // Base URL for thirdparty assets (tts.rocks CDN)
 const TTS_ROCKS_BASE = 'https://tts.rocks';
 
+// Piper needs TTS_ASSET_BASE set so its relative paths resolve to tts.rocks
+window.TTS_ASSET_BASE = TTS_ROCKS_BASE;
+
 async function loadPiper() {
     if (engineModels.piper) return engineModels.piper;
     updateLoadProgress(10, 'Loading Piper engine…');
@@ -504,6 +507,9 @@ async function loadPiper() {
             });
         }
         updateLoadProgress(20, 'Loading Piper TTS module…');
+
+        // Set TTS_ASSET_BASE so piper-tts-proper.js resolves paths to tts.rocks
+        window.TTS_ASSET_BASE = TTS_ROCKS_BASE;
 
         // Load Piper module
         await new Promise((resolve, reject) => {
@@ -530,12 +536,18 @@ async function loadPiper() {
 
 async function generatePiper(text, voice) {
     const piper = await loadPiper();
-    if (piper === engineModels.kokoro) return generateKokoro(text, voice);
+    if (piper === engineModels.kokoro) return generateKokoro(text, KokoroFallbackVoice(voice));
     const wavBlob = await piper.synthesize(text, 1.0);
     if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const arrayBuf = await wavBlob.arrayBuffer();
     const decoded = await audioContext.decodeAudioData(arrayBuf);
     return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
+}
+
+// Map non-Kokoro voice IDs to valid Kokoro ones for fallback
+function KokoroFallbackVoice(voice) {
+    if (VOICE_KEYS.includes(voice)) return voice;
+    return 'af_heart'; // safe default
 }
 
 async function loadKitten() {
@@ -572,7 +584,7 @@ async function loadKitten() {
 
 async function generateKitten(text, voice) {
     const kitten = await loadKitten();
-    if (kitten === engineModels.kokoro) return generateKokoro(text, voice);
+    if (kitten === engineModels.kokoro) return generateKokoro(text, KokoroFallbackVoice(voice));
     try {
         const result = await kitten.generateSpeech(text, voice, 1.0);
         if (result instanceof Blob) {
