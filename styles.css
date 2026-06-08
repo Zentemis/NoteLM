@@ -531,6 +531,44 @@ body {
 .footer a:hover { text-decoration: underline; }
 
 /* ---- Responsive ---- */
+/* ---- Paste Modal ---- */
+.paste-textarea {
+    width: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    resize: vertical;
+    margin: 0.75rem 0;
+}
+
+.paste-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.paste-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.paste-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.modal code {
+    background: var(--bg-tertiary);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+
 @media (max-width: 640px) {
     .app { padding: 1rem; }
     .logo h1 { font-size: 1.8rem; }

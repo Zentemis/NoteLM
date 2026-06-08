@@ -84,6 +84,10 @@ const modelProgressPercent = $('#modelProgressPercent');
 const loadingText = $('#loadingText');
 const statusDot = $('#statusDot');
 const statusText = $('#statusText');
+const pasteScriptBtn = $('#pasteScriptBtn');
+const pasteOverlay = $('#pasteOverlay');
+const pasteCancelBtn = $('#pasteCancelBtn');
+const pasteParseBtn = $('#pasteParseBtn');
 
 // --- Helpers ---
 function setStatus(text, state = 'ready') {
@@ -567,12 +571,95 @@ function writeString(view, offset, str) {
     }
 }
 
+// --- Paste script parsing ---
+function openPasteModal() {
+    $('#pasteOverlay').style.display = 'flex';
+    $('#pasteTextarea').value = '';
+    $('#pasteTextarea').focus();
+}
+
+function closePasteModal() {
+    $('#pasteOverlay').style.display = 'none';
+}
+
+function parseAndImportScript() {
+    const raw = $('#pasteTextarea').value.trim();
+    if (!raw) {
+        setStatus('Nothing to parse — paste some text first!', 'error');
+        return;
+    }
+
+    // Parse lines matching "Speaker Name: text"
+    // Supports: "Alice: hello", "Speaker 1: hello", "Alice : hello" (with optional space before colon)
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const parsed = [];
+    const speakerNames = new Set();
+
+    for (const line of lines) {
+        // Match: anything followed by colon and text
+        // Be flexible: allow "Name:" or "Name :" at the start
+        const match = line.match(/^(.+?)\s*:\s*(.+)$/);
+        if (match) {
+            const name = match[1].trim();
+            const text = match[2].trim();
+            if (name && text) {
+                parsed.push({ speakerName: name, text });
+                speakerNames.add(name);
+            }
+        }
+    }
+
+    if (parsed.length === 0) {
+        setStatus('No lines matched the "Speaker: text" pattern. Try format like: Alice: Hello!', 'error');
+        return;
+    }
+
+    // Create speakers for any new names found
+    // Try to match existing speakers by name first
+    const nameToId = {};
+    let voiceIdx = 0;
+    const voiceKeys = Object.keys(VOICES);
+
+    for (const name of speakerNames) {
+        // Check if speaker already exists
+        const existing = speakers.find(s => s.name.toLowerCase() === name.toLowerCase());
+        if (existing) {
+            nameToId[name] = existing.id;
+        } else {
+            // Create new speaker with rotating voice
+            const newId = addSpeaker(name, voiceKeys[voiceIdx % voiceKeys.length]);
+            nameToId[name] = newId;
+            voiceIdx++;
+        }
+    }
+
+    // Build script lines
+    scriptLines = parsed.map((p, i) => ({
+        id: 'paste_' + Date.now() + '_' + i,
+        speakerId: nameToId[p.speakerName],
+        text: p.text,
+    }));
+
+    renderSpeakers();
+    renderScriptLines();
+    closePasteModal();
+    setStatus(`Imported ${parsed.length} lines with ${speakerNames.size} speaker(s)`, 'ready');
+}
+
 // --- Event listeners ---
 addSpeakerBtn.addEventListener('click', () => addSpeaker());
 addLineBtn.addEventListener('click', () => addScriptLine());
 clearScriptBtn.addEventListener('click', () => {
     scriptLines = [];
     renderScriptLines();
+});
+pasteScriptBtn.addEventListener('click', openPasteModal);
+pasteCancelBtn.addEventListener('click', closePasteModal);
+pasteParseBtn.addEventListener('click', parseAndImportScript);
+
+// Close paste modal on backdrop click
+pasteOverlay.addEventListener('click', (e) => {
+    if (e.target === pasteOverlay) closePasteModal();
 });
 loadExampleBtn.addEventListener('click', loadExample);
 generateBtn.addEventListener('click', generateAudio);

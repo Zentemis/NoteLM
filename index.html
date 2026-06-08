@@ -44,6 +44,7 @@
                 <div class="panel-header">
                     <h2>📝 Script</h2>
                     <div class="script-tools">
+                        <button class="btn btn-small btn-secondary" id="pasteScriptBtn" title="Paste a formatted script">📋 Paste Script</button>
                         <button class="btn btn-small btn-secondary" id="clearScriptBtn" title="Clear all lines">Clear</button>
                         <button class="btn btn-small btn-secondary" id="loadExampleBtn" title="Load example script">Example</button>
                     </div>
@@ -96,6 +97,21 @@
         <footer class="footer">
             <p>Built with <a href="https://github.com/nicholasgasior/kokoro-js" target="_blank">Kokoro JS</a> — all processing happens locally in your browser. No data leaves your device.</p>
         </footer>
+    </div>
+
+    <!-- Paste Script Modal -->
+    <div class="overlay" id="pasteOverlay" style="display:none;">
+        <div class="modal" style="max-width:560px;">
+            <h3>📋 Paste Your Script</h3>
+            <p>Paste a script with lines like <code>Speaker Name: their dialogue</code>.<br>Speakers will be auto-detected and created.</p>
+            <textarea id="pasteTextarea" class="paste-textarea" rows="12" placeholder="Alice: Hello there!
+Bob: Hey Alice, how are you?
+Alice: Doing great, thanks!"></textarea>
+            <div class="paste-actions">
+                <button class="btn btn-secondary" id="pasteCancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="pasteParseBtn">Parse & Import</button>
+            </div>
+        </div>
     </div>
 
     <!-- Model Loading Overlay -->
