@@ -1,49 +1,41 @@
 // ============================================
-// NoteLM — Multi-Speaker TTS App
+// NoteLM — Multi-Speaker TTS
 // Powered by Kokoro JS (browser-local)
 // ============================================
 
-// --- Kokoro voice catalog ---
 const VOICES = {
-    // American English — Female
-    'af_heart':    { name: 'Heart',    lang: 'en-us', gender: 'Female', quality: 'A' },
-    'af_alloy':    { name: 'Alloy',    lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_aoede':    { name: 'Aoede',    lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_bella':    { name: 'Bella',    lang: 'en-us', gender: 'Female', quality: 'A' },
-    'af_jessica':  { name: 'Jessica',  lang: 'en-us', gender: 'Female', quality: 'C' },
-    'af_kore':     { name: 'Kore',     lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_nicole':   { name: 'Nicole',   lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_nova':     { name: 'Nova',     lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_river':    { name: 'River',    lang: 'en-us', gender: 'Female', quality: 'C' },
-    'af_sarah':    { name: 'Sarah',    lang: 'en-us', gender: 'Female', quality: 'B' },
-    'af_sky':      { name: 'Sky',      lang: 'en-us', gender: 'Female', quality: 'B' },
-    // American English — Male
-    'am_adam':     { name: 'Adam',     lang: 'en-us', gender: 'Male',   quality: 'D' },
-    'am_echo':     { name: 'Echo',     lang: 'en-us', gender: 'Male',   quality: 'C' },
-    'am_eric':     { name: 'Eric',     lang: 'en-us', gender: 'Male',   quality: 'C' },
-    'am_fenrir':   { name: 'Fenrir',   lang: 'en-us', gender: 'Male',   quality: 'B' },
-    'am_liam':     { name: 'Liam',     lang: 'en-us', gender: 'Male',   quality: 'C' },
-    'am_michael':  { name: 'Michael',  lang: 'en-us', gender: 'Male',   quality: 'B' },
-    'am_onyx':     { name: 'Onyx',     lang: 'en-us', gender: 'Male',   quality: 'C' },
-    'am_puck':     { name: 'Puck',     lang: 'en-us', gender: 'Male',   quality: 'B' },
-    'am_santa':    { name: 'Santa',    lang: 'en-us', gender: 'Male',   quality: 'C' },
-    // British English — Female
-    'bf_emma':     { name: 'Emma',     lang: 'en-gb', gender: 'Female', quality: 'B' },
-    'bf_isabella': { name: 'Isabella', lang: 'en-gb', gender: 'Female', quality: 'B' },
-    'bf_alice':    { name: 'Alice',    lang: 'en-gb', gender: 'Female', quality: 'C' },
-    'bf_lily':     { name: 'Lily',     lang: 'en-gb', gender: 'Female', quality: 'C' },
-    // British English — Male
-    'bm_george':   { name: 'George',   lang: 'en-gb', gender: 'Male',   quality: 'B' },
-    'bm_lewis':    { name: 'Lewis',    lang: 'en-gb', gender: 'Male',   quality: 'C' },
-    'bm_daniel':   { name: 'Daniel',   lang: 'en-gb', gender: 'Male',   quality: 'C' },
-    'bm_fable':    { name: 'Fable',    lang: 'en-gb', gender: 'Male',   quality: 'B' },
+    af_heart:    { name: 'Heart',    lang: 'en-us', gender: 'Female' },
+    af_alloy:    { name: 'Alloy',    lang: 'en-us', gender: 'Female' },
+    af_aoede:    { name: 'Aoede',    lang: 'en-us', gender: 'Female' },
+    af_bella:    { name: 'Bella',    lang: 'en-us', gender: 'Female' },
+    af_jessica:  { name: 'Jessica',  lang: 'en-us', gender: 'Female' },
+    af_kore:     { name: 'Kore',     lang: 'en-us', gender: 'Female' },
+    af_nicole:   { name: 'Nicole',   lang: 'en-us', gender: 'Female' },
+    af_nova:     { name: 'Nova',     lang: 'en-us', gender: 'Female' },
+    af_river:    { name: 'River',    lang: 'en-us', gender: 'Female' },
+    af_sarah:    { name: 'Sarah',    lang: 'en-us', gender: 'Female' },
+    af_sky:      { name: 'Sky',      lang: 'en-us', gender: 'Female' },
+    am_adam:     { name: 'Adam',     lang: 'en-us', gender: 'Male'   },
+    am_echo:     { name: 'Echo',     lang: 'en-us', gender: 'Male'   },
+    am_eric:     { name: 'Eric',     lang: 'en-us', gender: 'Male'   },
+    am_fenrir:   { name: 'Fenrir',   lang: 'en-us', gender: 'Male'   },
+    am_liam:     { name: 'Liam',     lang: 'en-us', gender: 'Male'   },
+    am_michael:  { name: 'Michael',  lang: 'en-us', gender: 'Male'   },
+    am_onyx:     { name: 'Onyx',     lang: 'en-us', gender: 'Male'   },
+    am_puck:     { name: 'Puck',     lang: 'en-us', gender: 'Male'   },
+    am_santa:    { name: 'Santa',    lang: 'en-us', gender: 'Male'   },
+    bf_emma:     { name: 'Emma',     lang: 'en-gb', gender: 'Female' },
+    bf_isabella: { name: 'Isabella', lang: 'en-gb', gender: 'Female' },
+    bf_alice:    { name: 'Alice',    lang: 'en-gb', gender: 'Female' },
+    bf_lily:     { name: 'Lily',     lang: 'en-gb', gender: 'Female' },
+    bm_george:   { name: 'George',   lang: 'en-gb', gender: 'Male'   },
+    bm_lewis:    { name: 'Lewis',    lang: 'en-gb', gender: 'Male'   },
+    bm_daniel:   { name: 'Daniel',   lang: 'en-gb', gender: 'Male'   },
+    bm_fable:    { name: 'Fable',    lang: 'en-gb', gender: 'Male'   },
 };
 
-const SPEAKER_COLORS = [
-    '#6c63ff', '#f87171', '#4ade80', '#fbbf24',
-    '#60a5fa', '#f472b6', '#a78bfa', '#34d399',
-    '#fb923c', '#38bdf8', '#e879f9', '#facc15',
-];
+const COLORS = ['#2dd4bf','#f472b6','#fbbf24','#a78bfa','#60a5fa','#4ade80','#fb923c','#38bdf8','#e879f9','#facc15','#34d399','#f87171'];
+const VOICE_KEYS = Object.keys(VOICES);
 
 // --- State ---
 let speakers = [];
@@ -57,64 +49,62 @@ let isPlaying = false;
 let playStartTime = 0;
 let playOffset = 0;
 let animFrameId = null;
+let openEditorId = null; // which speaker chip has its editor open
 
-// --- DOM refs ---
-const $ = (sel) => document.querySelector(sel);
-const speakersList = $('#speakersList');
-const scriptLinesEl = $('#scriptLines');
-const addSpeakerBtn = $('#addSpeakerBtn');
-const addLineBtn = $('#addLineBtn');
-const clearScriptBtn = $('#clearScriptBtn');
-const loadExampleBtn = $('#loadExampleBtn');
-const generateBtn = $('#generateBtn');
-const downloadBtn = $('#downloadBtn');
-const stopBtn = $('#stopBtn');
-const progressSection = $('#progressSection');
-const progressBar = $('#progressBar');
-const progressText = $('#progressText');
-const audioPlayer = $('#audioPlayer');
-const waveformCanvas = $('#waveformCanvas');
-const playPauseBtn = $('#playPauseBtn');
-const timeDisplay = $('#timeDisplay');
-const seekBar = $('#seekBar');
-const volumeSlider = $('#volumeSlider');
-const loadingOverlay = $('#loadingOverlay');
-const modelProgressBar = $('#modelProgressBar');
-const modelProgressPercent = $('#modelProgressPercent');
-const loadingText = $('#loadingText');
-const statusDot = $('#statusDot');
-const statusText = $('#statusText');
-const pasteScriptBtn = $('#pasteScriptBtn');
-const pasteOverlay = $('#pasteOverlay');
-const pasteCancelBtn = $('#pasteCancelBtn');
-const pasteParseBtn = $('#pasteParseBtn');
+// --- DOM ---
+const $ = s => document.querySelector(s);
+const dom = {
+    speakersList:    $('#speakersList'),
+    scriptLines:     $('#scriptLines'),
+    addSpeakerBtn:   $('#addSpeakerBtn'),
+    addLineBtn:      $('#addLineBtn'),
+    clearScriptBtn:  $('#clearScriptBtn'),
+    loadExampleBtn:  $('#loadExampleBtn'),
+    pasteScriptBtn:  $('#pasteScriptBtn'),
+    pasteOverlay:    $('#pasteOverlay'),
+    pasteCancelBtn:  $('#pasteCancelBtn'),
+    pasteParseBtn:   $('#pasteParseBtn'),
+    generateBtn:     $('#generateBtn'),
+    downloadBtn:     $('#downloadBtn'),
+    stopBtn:         $('#stopBtn'),
+    progressSection: $('#progressSection'),
+    progressBar:     $('#progressBar'),
+    progressText:    $('#progressText'),
+    audioPlayer:     $('#audioPlayer'),
+    waveformCanvas:  $('#waveformCanvas'),
+    playPauseBtn:    $('#playPauseBtn'),
+    timeDisplay:     $('#timeDisplay'),
+    seekBar:         $('#seekBar'),
+    volumeSlider:    $('#volumeSlider'),
+    loadingOverlay:  $('#loadingOverlay'),
+    modelProgressBar:    $('#modelProgressBar'),
+    modelProgressPercent: $('#modelProgressPercent'),
+    loadingText:     $('#loadingText'),
+    statusDot:       $('#statusDot'),
+    statusText:      $('#statusText'),
+};
 
 // --- Helpers ---
-function setStatus(text, state = 'ready') {
-    statusText.textContent = text;
-    statusDot.className = 'status-dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
-}
+const setStatus = (text, state = 'ready') => {
+    dom.statusText.textContent = text;
+    dom.statusDot.className = 'status-dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
+};
 
-function getVoiceOptions() {
-    return Object.entries(VOICES).map(([id, v]) => {
-        const label = `${v.name} (${v.gender}, ${v.lang}) — ${v.quality}`;
-        return `<option value="${id}">${label}</option>`;
-    }).join('');
-}
+const getSpeaker = id => speakers.find(s => s.id === id);
 
-function getSpeakerById(id) {
-    return speakers.find(s => s.id === id);
-}
+const voiceLabel = vid => {
+    const v = VOICES[vid];
+    return v ? `${v.name} · ${v.gender[0]}` : vid;
+};
 
-// --- Speaker management ---
+// --- Speaker Management ---
 function addSpeaker(name, voiceId) {
-    const id = 'spk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-    const colorIdx = speakers.length % SPEAKER_COLORS.length;
+    const id = 's' + Date.now() + Math.random().toString(36).slice(2, 5);
     speakers.push({
         id,
         name: name || `Speaker ${speakers.length + 1}`,
-        voice: voiceId || Object.keys(VOICES)[speakers.length % Object.keys(VOICES).length],
-        color: SPEAKER_COLORS[colorIdx],
+        voice: voiceId || VOICE_KEYS[speakers.length % VOICE_KEYS.length],
+        color: COLORS[speakers.length % COLORS.length],
     });
     renderSpeakers();
     return id;
@@ -122,50 +112,90 @@ function addSpeaker(name, voiceId) {
 
 function removeSpeaker(id) {
     speakers = speakers.filter(s => s.id !== id);
+    if (openEditorId === id) openEditorId = null;
+    renderSpeakers();
+}
+
+function toggleEditor(id) {
+    openEditorId = openEditorId === id ? null : id;
     renderSpeakers();
 }
 
 function renderSpeakers() {
-    speakersList.innerHTML = speakers.map(s => `
-        <div class="speaker-card" data-id="${s.id}">
-            <div class="speaker-color" style="background:${s.color}"></div>
-            <div class="speaker-fields">
-                <label>
-                    Name
-                    <input type="text" value="${s.name}" data-field="name" data-id="${s.id}" placeholder="Speaker name">
-                </label>
-                <label>
-                    Voice
-                    <select data-field="voice" data-id="${s.id}">
-                        ${Object.entries(VOICES).map(([vid, v]) =>
-                            `<option value="${vid}" ${vid === s.voice ? 'selected' : ''}>${v.name} (${v.gender}, ${v.lang})</option>`
-                        ).join('')}
-                    </select>
-                </label>
-            </div>
-            <button class="speaker-remove" data-remove="${s.id}" title="Remove speaker">×</button>
+    dom.speakersList.innerHTML = speakers.map(s => `
+        <div class="speaker-chip${openEditorId === s.id ? ' active' : ''}" data-id="${s.id}">
+            <span class="chip-dot" style="background:${s.color}"></span>
+            <span class="chip-name">${s.name}</span>
+            <span class="chip-voice">${voiceLabel(s.voice)}</span>
+            <button class="chip-remove" data-remove="${s.id}" title="Remove">×</button>
+            ${openEditorId === s.id ? `
+                <div class="speaker-editor open" data-editor="${s.id}">
+                    <div class="editor-field">
+                        <span class="editor-label">Name</span>
+                        <input class="editor-input" type="text" value="${s.name}" data-edit="name" data-id="${s.id}">
+                    </div>
+                    <div class="editor-field">
+                        <span class="editor-label">Voice</span>
+                        <select class="editor-select" data-edit="voice" data-id="${s.id}">
+                            ${VOICE_KEYS.map(v => {
+                                const vo = VOICES[v];
+                                const sel = v === s.voice ? 'selected' : '';
+                                return `<option value="${v}" ${sel}>${vo.name} (${vo.gender}, ${vo.lang})</option>`;
+                            }).join('')}
+                        </select>
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 
-    // Bind events
-    speakersList.querySelectorAll('input, select').forEach(el => {
-        el.addEventListener('change', (e) => {
-            const spk = getSpeakerById(e.target.dataset.id);
-            if (spk) spk[e.target.dataset.field] = e.target.value;
+    // Bind chip click -> toggle editor
+    dom.speakersList.querySelectorAll('.speaker-chip').forEach(chip => {
+        chip.addEventListener('click', e => {
+            if (e.target.closest('.chip-remove') || e.target.closest('.speaker-editor')) return;
+            toggleEditor(chip.dataset.id);
         });
     });
-    speakersList.querySelectorAll('.speaker-remove').forEach(el => {
-        el.addEventListener('click', () => removeSpeaker(el.dataset.remove));
+
+    // Bind remove buttons
+    dom.speakersList.querySelectorAll('.chip-remove').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            removeSpeaker(btn.dataset.remove);
+        });
     });
 
-    // Update script line speaker dropdowns
+    // Bind editor inputs
+    dom.speakersList.querySelectorAll('.editor-input, .editor-select').forEach(el => {
+        el.addEventListener('change', () => {
+            const spk = getSpeaker(el.dataset.id);
+            if (spk) spk[el.dataset.edit] = el.value;
+            renderSpeakers();
+        });
+        el.addEventListener('click', e => e.stopPropagation());
+    });
+
+    // Close editor on outside click
+    if (openEditorId) {
+        setTimeout(() => {
+            const handler = e => {
+                if (!e.target.closest('.speaker-chip')) {
+                    openEditorId = null;
+                    renderSpeakers();
+                    document.removeEventListener('click', handler);
+                }
+            };
+            document.addEventListener('click', handler);
+        }, 0);
+    }
+
     updateLineSpeakerOptions();
 }
 
-// --- Script line management ---
+// --- Script Lines ---
 function addScriptLine(speakerId, text) {
     scriptLines.push({
-        id: 'line_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        id: 'l' + Date.now() + Math.random().toString(36).slice(2, 5),
         speakerId: speakerId || (speakers[0]?.id || ''),
         text: text || '',
     });
@@ -178,245 +208,248 @@ function removeScriptLine(id) {
 }
 
 function updateLineSpeakerOptions() {
-    scriptLinesEl.querySelectorAll('.line-speaker').forEach(sel => {
-        const currentVal = sel.value;
-        sel.innerHTML = speakers.map(s =>
-            `<option value="${s.id}">${s.name}</option>`
-        ).join('');
-        // Try to preserve selection
-        if (speakers.find(s => s.id === currentVal)) {
-            sel.value = currentVal;
-        }
+    dom.scriptLines.querySelectorAll('.line-speaker-select').forEach(sel => {
+        const val = sel.value;
+        sel.innerHTML = speakers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        if (speakers.find(s => s.id === val)) sel.value = val;
     });
 }
 
 function renderScriptLines() {
-    scriptLinesEl.innerHTML = scriptLines.map((line, i) => `
-        <div class="script-line" data-id="${line.id}">
-            <span class="line-number">${i + 1}</span>
-            <select class="line-speaker" data-lid="${line.id}">
-                ${speakers.map(s =>
-                    `<option value="${s.id}" ${s.id === line.speakerId ? 'selected' : ''}>${s.name}</option>`
-                ).join('')}
-            </select>
-            <textarea class="line-text" data-lid="${line.id}" rows="1" placeholder="Enter dialogue...">${line.text}</textarea>
-            <button class="line-remove" data-remove="${line.id}" title="Remove line">×</button>
-        </div>
-    `).join('');
+    dom.scriptLines.innerHTML = scriptLines.map((line, i) => {
+        const spk = getSpeaker(line.speakerId);
+        const color = spk?.color || '#475569';
+        return `
+            <div class="script-line${line._active ? ' active' : ''}" data-id="${line.id}">
+                <div class="line-accent" style="background:${color}"></div>
+                <span class="line-number">${i + 1}</span>
+                <select class="line-speaker-select" data-lid="${line.id}">
+                    ${speakers.map(s => `<option value="${s.id}"${s.id === line.speakerId ? ' selected' : ''}>${s.name}</option>`).join('')}
+                </select>
+                <textarea class="line-textarea" data-lid="${line.id}" rows="1" placeholder="Enter dialogue…">${line.text}</textarea>
+                <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
+            </div>
+        `;
+    }).join('');
 
-    // Auto-resize textareas
-    scriptLinesEl.querySelectorAll('.line-text').forEach(ta => {
-        ta.addEventListener('input', () => {
-            ta.style.height = 'auto';
-            ta.style.height = ta.scrollHeight + 'px';
-        });
-        // Trigger initial resize
-        ta.style.height = 'auto';
-        ta.style.height = ta.scrollHeight + 'px';
+    // Auto-resize
+    dom.scriptLines.querySelectorAll('.line-textarea').forEach(ta => {
+        const resize = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+        ta.addEventListener('input', resize);
+        resize();
     });
 
-    // Bind events
-    scriptLinesEl.querySelectorAll('.line-speaker').forEach(sel => {
-        sel.addEventListener('change', (e) => {
+    // Bind
+    dom.scriptLines.querySelectorAll('.line-speaker-select').forEach(sel => {
+        sel.addEventListener('change', e => {
             const line = scriptLines.find(l => l.id === e.target.dataset.lid);
             if (line) line.speakerId = e.target.value;
+            renderScriptLines();
         });
     });
-    scriptLinesEl.querySelectorAll('.line-text').forEach(ta => {
-        ta.addEventListener('input', (e) => {
+    dom.scriptLines.querySelectorAll('.line-textarea').forEach(ta => {
+        ta.addEventListener('input', e => {
             const line = scriptLines.find(l => l.id === e.target.dataset.lid);
             if (line) line.text = e.target.value;
         });
     });
-    scriptLinesEl.querySelectorAll('.line-remove').forEach(el => {
-        el.addEventListener('click', () => removeScriptLine(el.dataset.remove));
+    dom.scriptLines.querySelectorAll('.line-remove').forEach(btn => {
+        btn.addEventListener('click', () => removeScriptLine(btn.dataset.remove));
     });
 }
 
-// --- Example script ---
+// --- Paste Parser ---
+function openPasteModal() {
+    dom.pasteOverlay.style.display = 'flex';
+    dom.pasteTextarea.value = '';
+    dom.pasteTextarea.focus();
+}
+
+function closePasteModal() {
+    dom.pasteOverlay.style.display = 'none';
+}
+
+function parseAndImport() {
+    const raw = dom.pasteTextarea.value.trim();
+    if (!raw) { setStatus('Paste some text first!', 'error'); return; }
+
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    const parsed = [];
+    const nameSet = new Set();
+
+    for (const line of lines) {
+        const m = line.match(/^(.+?)\s*:\s*(.+)$/);
+        if (m && m[1] && m[2]) {
+            parsed.push({ name: m[1].trim(), text: m[2].trim() });
+            nameSet.add(m[1].trim());
+        }
+    }
+
+    if (!parsed.length) {
+        setStatus('No "Speaker: text" lines found. Check your format!', 'error');
+        return;
+    }
+
+    // Map names -> speaker ids (reuse existing, create new)
+    const nameMap = {};
+    let vi = 0;
+    for (const name of nameSet) {
+        const existing = speakers.find(s => s.name.toLowerCase() === name.toLowerCase());
+        nameMap[name] = existing ? existing.id : addSpeaker(name, VOICE_KEYS[vi % VOICE_KEYS.length]);
+        vi++;
+    }
+
+    scriptLines = parsed.map((p, i) => ({
+        id: 'p' + Date.now() + i,
+        speakerId: nameMap[p.name],
+        text: p.text,
+    }));
+
+    renderSpeakers();
+    renderScriptLines();
+    closePasteModal();
+    setStatus(`Imported ${parsed.length} lines · ${nameSet.size} speaker(s)`, 'ready');
+}
+
+// --- Example ---
 function loadExample() {
-    // Ensure we have at least 2 speakers
     if (speakers.length < 2) {
         speakers = [];
         addSpeaker('Alice', 'af_heart');
         addSpeaker('Bob', 'am_puck');
     }
-
     scriptLines = [
-        { id: 'ex1', speakerId: speakers[0].id, text: 'Hey Bob, have you heard about this new text-to-speech technology?' },
-        { id: 'ex2', speakerId: speakers[1].id, text: 'Oh yeah! It runs entirely in the browser. No server needed at all.' },
-        { id: 'ex3', speakerId: speakers[0].id, text: "That's incredible. And each speaker can have a completely different voice?" },
-        { id: 'ex4', speakerId: speakers[1].id, text: "Absolutely. You can pick from dozens of voices. It's all powered by Kokoro." },
-        { id: 'ex5', speakerId: speakers[0].id, text: 'This is going to change how we create audio content.' },
-        { id: 'ex6', speakerId: speakers[1].id, text: "Couldn't agree more. Give it a try!" },
+        { id: 'e1', speakerId: speakers[0].id, text: "Hey Bob, have you heard about this new text-to-speech technology?" },
+        { id: 'e2', speakerId: speakers[1].id, text: "Oh yeah! It runs entirely in the browser. No server needed at all." },
+        { id: 'e3', speakerId: speakers[0].id, text: "That's incredible. And each speaker can have a completely different voice?" },
+        { id: 'e4', speakerId: speakers[1].id, text: "Absolutely. You can pick from dozens of voices. It's all powered by Kokoro." },
+        { id: 'e5', speakerId: speakers[0].id, text: "This is going to change how we create audio content." },
+        { id: 'e6', speakerId: speakers[1].id, text: "Couldn't agree more. Give it a try!" },
     ];
     renderScriptLines();
 }
 
-// --- Kokoro model loading ---
-async function loadKokoroModel() {
+// --- Kokoro Model ---
+async function loadModel() {
     if (kokoroModel) return kokoroModel;
-
-    loadingOverlay.style.display = 'flex';
-    setStatus('Loading Kokoro model...', 'loading');
+    dom.loadingOverlay.style.display = 'flex';
+    setStatus('Loading Kokoro model…', 'loading');
 
     try {
-        // Dynamic import of kokoro-js
         const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
-
-        loadingText.textContent = 'Initializing model... This may take a moment on first visit.';
+        dom.loadingText.textContent = 'Initializing model…';
 
         kokoroModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
             dtype: 'fp32',
             device: 'webgpu',
-            progress_callback: (progress) => {
-                if (progress.status === 'progress' && progress.total) {
-                    const pct = Math.round((progress.progress / progress.total) * 100);
-                    modelProgressBar.style.width = pct + '%';
-                    modelProgressPercent.textContent = pct + '%';
-                    loadingText.textContent = `Downloading model: ${pct}%`;
-                } else if (progress.status === 'done') {
-                    modelProgressBar.style.width = '100%';
-                    modelProgressPercent.textContent = '100%';
+            progress_callback: p => {
+                if (p.status === 'progress' && p.total) {
+                    const pct = Math.round((p.progress / p.total) * 100);
+                    dom.modelProgressBar.style.width = pct + '%';
+                    dom.modelProgressPercent.textContent = pct + '%';
+                    dom.loadingText.textContent = `Downloading: ${pct}%`;
                 }
             }
         });
 
-        loadingOverlay.style.display = 'none';
-        setStatus('Model loaded — ready to generate', 'ready');
+        dom.loadingOverlay.style.display = 'none';
+        setStatus('Model loaded', 'ready');
         return kokoroModel;
     } catch (err) {
-        console.error('Failed to load Kokoro model:', err);
-        loadingOverlay.style.display = 'none';
-        setStatus('Failed to load model: ' + err.message, 'error');
+        dom.loadingOverlay.style.display = 'none';
+        setStatus('Model load failed: ' + err.message, 'error');
         throw err;
     }
 }
 
-// --- Audio generation ---
-async function generateAudio() {
+// --- Generation ---
+async function generate() {
     if (isGenerating) return;
 
-    // Validate
-    const validLines = scriptLines.filter(l => l.text.trim());
-    if (validLines.length === 0) {
-        setStatus('Add some script lines first!', 'error');
-        return;
-    }
-    if (speakers.length === 0) {
-        setStatus('Add at least one speaker first!', 'error');
-        return;
-    }
+    const valid = scriptLines.filter(l => l.text.trim());
+    if (!valid.length) { setStatus('Add some script lines first!', 'error'); return; }
+    if (!speakers.length) { setStatus('Add at least one speaker!', 'error'); return; }
 
     isGenerating = true;
-    generateBtn.disabled = true;
-    downloadBtn.disabled = true;
-    stopBtn.disabled = false;
-    progressSection.style.display = 'block';
-    audioPlayer.style.display = 'none';
-    setStatus('Generating audio...', 'loading');
+    dom.generateBtn.disabled = true;
+    dom.downloadBtn.disabled = true;
+    dom.stopBtn.disabled = false;
+    dom.progressSection.style.display = 'flex';
+    dom.audioPlayer.style.display = 'none';
+    setStatus('Generating…', 'loading');
 
     try {
-        const model = await loadKokoroModel();
+        const model = await loadModel();
+        const chunks = [];
+        const sr = 24000;
 
-        // Generate audio for each line
-        const audioChunks = [];
-        const sampleRate = 24000; // Kokoro's sample rate
+        for (let i = 0; i < valid.length; i++) {
+            const line = valid[i];
+            const spk = getSpeaker(line.speakerId);
+            const pct = Math.round((i / valid.length) * 100);
 
-        for (let i = 0; i < validLines.length; i++) {
-            const line = validLines[i];
-            const speaker = getSpeakerById(line.speakerId);
-            const voiceId = speaker?.voice || 'af_heart';
-            const pct = Math.round(((i) / validLines.length) * 100);
-
-            progressBar.style.width = pct + '%';
-            progressText.textContent = `Generating line ${i + 1} of ${validLines.length} (${speaker?.name || 'Unknown'})...`;
+            dom.progressBar.style.width = pct + '%';
+            dom.progressText.textContent = `Line ${i + 1}/${valid.length} — ${spk?.name || '?'}`;
 
             // Highlight active line
-            scriptLinesEl.querySelectorAll('.script-line').forEach(el => el.classList.remove('active'));
-            const activeEl = scriptLinesEl.querySelector(`[data-id="${line.id}"]`);
-            if (activeEl) activeEl.classList.add('active');
+            scriptLines.forEach(l => l._active = l.id === line.id);
+            renderScriptLines();
 
-            // Generate speech for this line
-            const audio = await model.generate(line.text, { voice: voiceId });
+            const audio = await model.generate(line.text, { voice: spk?.voice || 'af_heart' });
+            chunks.push(audio.audio);
 
-            // Get raw Float32 samples
-            const raw = audio.audio; // Float32Array
-            audioChunks.push(raw);
-
-            // Add a short silence between speakers (0.4s)
-            if (i < validLines.length - 1) {
-                const silence = new Float32Array(Math.floor(sampleRate * 0.4));
-                audioChunks.push(silence);
-            }
+            if (i < valid.length - 1) chunks.push(new Float32Array(Math.floor(sr * 0.35)));
         }
 
-        // Concatenate all chunks
-        const totalLength = audioChunks.reduce((sum, c) => sum + c.length, 0);
-        const merged = new Float32Array(totalLength);
-        let offset = 0;
-        for (const chunk of audioChunks) {
-            merged.set(chunk, offset);
-            offset += chunk.length;
-        }
+        // Merge chunks
+        const total = chunks.reduce((s, c) => s + c.length, 0);
+        const merged = new Float32Array(total);
+        let off = 0;
+        for (const c of chunks) { merged.set(c, off); off += c.length; }
 
-        // Create AudioBuffer
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        const buffer = audioContext.createBuffer(1, merged.length, sampleRate);
-        buffer.getChannelData(0).set(merged);
-        currentAudioBuffer = buffer;
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = audioContext.createBuffer(1, merged.length, sr);
+        buf.getChannelData(0).set(merged);
+        currentAudioBuffer = buf;
 
-        // Done!
-        progressBar.style.width = '100%';
-        progressText.textContent = 'Done!';
-        scriptLinesEl.querySelectorAll('.script-line').forEach(el => el.classList.remove('active'));
+        // Cleanup active highlights
+        scriptLines.forEach(l => l._active = false);
+        renderScriptLines();
 
-        // Show player
-        audioPlayer.style.display = 'block';
-        downloadBtn.disabled = false;
+        dom.progressBar.style.width = '100%';
+        dom.progressText.textContent = 'Done!';
+        dom.audioPlayer.style.display = 'flex';
+        dom.downloadBtn.disabled = false;
         drawWaveform(merged);
         playAudio();
-
-        setStatus(`Generated ${validLines.length} lines successfully`, 'ready');
-
+        setStatus(`Generated ${valid.length} lines`, 'ready');
     } catch (err) {
-        console.error('Generation error:', err);
         setStatus('Error: ' + err.message, 'error');
-        progressText.textContent = 'Error: ' + err.message;
+        dom.progressText.textContent = 'Error';
     } finally {
         isGenerating = false;
-        generateBtn.disabled = false;
-        stopBtn.disabled = true;
+        dom.generateBtn.disabled = false;
+        dom.stopBtn.disabled = true;
     }
 }
 
 // --- Playback ---
 function playAudio() {
     if (!currentAudioBuffer || !audioContext) return;
-
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-
+    if (audioContext.state === 'suspended') audioContext.resume();
     stopPlayback();
 
     currentSource = audioContext.createBufferSource();
     currentSource.buffer = currentAudioBuffer;
     currentSource.connect(audioContext.destination);
-    currentSource.onended = () => {
-        isPlaying = false;
-        playPauseBtn.textContent = '▶';
-        cancelAnimationFrame(animFrameId);
-    };
+    currentSource.onended = () => { isPlaying = false; dom.playPauseBtn.textContent = '▶'; cancelAnimationFrame(animFrameId); };
 
     playStartTime = audioContext.currentTime;
     playOffset = 0;
-    currentSource.start(0, playOffset);
+    currentSource.start(0);
     isPlaying = true;
-    playPauseBtn.textContent = '⏸';
-    updateSeekBar();
+    dom.playPauseBtn.textContent = '⏸';
+    tickSeekBar();
 }
 
 function pauseAudio() {
@@ -425,272 +458,129 @@ function pauseAudio() {
     currentSource.stop();
     currentSource = null;
     isPlaying = false;
-    playPauseBtn.textContent = '▶';
+    dom.playPauseBtn.textContent = '▶';
     cancelAnimationFrame(animFrameId);
 }
 
 function stopPlayback() {
-    if (currentSource) {
-        try { currentSource.stop(); } catch(e) {}
-        currentSource = null;
-    }
+    if (currentSource) try { currentSource.stop(); } catch {}
+    currentSource = null;
     isPlaying = false;
     playOffset = 0;
-    playPauseBtn.textContent = '▶';
+    dom.playPauseBtn.textContent = '▶';
     cancelAnimationFrame(animFrameId);
-    seekBar.value = 0;
-    timeDisplay.textContent = '0:00 / 0:00';
+    dom.seekBar.value = 0;
+    dom.timeDisplay.textContent = '0:00';
 }
 
 function seekTo(pct) {
     if (!currentAudioBuffer) return;
-    const wasPlaying = isPlaying;
+    const was = isPlaying;
     if (isPlaying) stopPlayback();
     playOffset = (pct / 100) * currentAudioBuffer.duration;
-    if (wasPlaying) {
+    if (was) {
         currentSource = audioContext.createBufferSource();
         currentSource.buffer = currentAudioBuffer;
         currentSource.connect(audioContext.destination);
-        currentSource.onended = () => {
-            isPlaying = false;
-            playPauseBtn.textContent = '▶';
-            cancelAnimationFrame(animFrameId);
-        };
+        currentSource.onended = () => { isPlaying = false; dom.playPauseBtn.textContent = '▶'; cancelAnimationFrame(animFrameId); };
         currentSource.start(0, playOffset);
         isPlaying = true;
         playStartTime = audioContext.currentTime;
-        playPauseBtn.textContent = '⏸';
-        updateSeekBar();
+        dom.playPauseBtn.textContent = '⏸';
+        tickSeekBar();
     }
 }
 
-function updateSeekBar() {
+function tickSeekBar() {
     if (!currentAudioBuffer) return;
-    const elapsed = isPlaying ? (playOffset + (audioContext.currentTime - playStartTime)) : playOffset;
-    const duration = currentAudioBuffer.duration;
-    const pct = Math.min((elapsed / duration) * 100, 100);
-    seekBar.value = pct;
-    timeDisplay.textContent = formatTime(elapsed) + ' / ' + formatTime(duration);
-    if (isPlaying) {
-        animFrameId = requestAnimationFrame(updateSeekBar);
-    }
+    const elapsed = isPlaying ? (playOffset + audioContext.currentTime - playStartTime) : playOffset;
+    const dur = currentAudioBuffer.duration;
+    dom.seekBar.value = Math.min((elapsed / dur) * 100, 100);
+    dom.timeDisplay.textContent = fmtTime(elapsed);
+    if (isPlaying) animFrameId = requestAnimationFrame(tickSeekBar);
 }
 
-function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
-}
+const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-// --- Waveform drawing ---
+// --- Waveform ---
 function drawWaveform(samples) {
-    const canvas = waveformCanvas;
+    const canvas = dom.waveformCanvas;
     const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = devicePixelRatio || 1;
     canvas.width = canvas.clientWidth * dpr;
     canvas.height = canvas.clientHeight * dpr;
     ctx.scale(dpr, dpr);
 
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
     const step = Math.ceil(samples.length / w);
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(108, 99, 255, 0.15)';
-    ctx.strokeStyle = '#6c63ff';
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    ctx.moveTo(0, h / 2);
 
     for (let i = 0; i < w; i++) {
         let min = 1, max = -1;
         for (let j = 0; j < step; j++) {
-            const idx = i * step + j;
-            if (idx < samples.length) {
-                if (samples[idx] < min) min = samples[idx];
-                if (samples[idx] > max) max = samples[idx];
-            }
+            const v = samples[i * step + j];
+            if (v !== undefined) { if (v < min) min = v; if (v > max) max = v; }
         }
-        const yLow = (1 + min) * h / 2;
-        const yHigh = (1 + max) * h / 2;
-        ctx.fillRect(i, yLow, 1, yHigh - yLow || 1);
-        ctx.lineTo(i, (yLow + yHigh) / 2);
-    }
+        const y1 = (1 + min) * h / 2;
+        const y2 = (1 + max) * h / 2;
+        const height = Math.max(y2 - y1, 1);
 
-    ctx.stroke();
+        const grad = ctx.createLinearGradient(0, y1, 0, y1 + height);
+        grad.addColorStop(0, 'rgba(45, 212, 191, 0.6)');
+        grad.addColorStop(0.5, 'rgba(45, 212, 191, 0.9)');
+        grad.addColorStop(1, 'rgba(45, 212, 191, 0.6)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(i, y1, 1, height);
+    }
 }
 
 // --- Download WAV ---
 function downloadWav() {
     if (!currentAudioBuffer) return;
-
-    const numChannels = currentAudioBuffer.numberOfChannels;
-    const sampleRate = currentAudioBuffer.sampleRate;
-    const format = 1; // PCM
-    const bitsPerSample = 16;
+    const sr = currentAudioBuffer.sampleRate;
     const samples = currentAudioBuffer.getChannelData(0);
-    const dataLength = samples.length * (bitsPerSample / 8);
-    const buffer = new ArrayBuffer(44 + dataLength);
-    const view = new DataView(buffer);
+    const len = samples.length * 2;
+    const buf = new ArrayBuffer(44 + len);
+    const v = new DataView(buf);
 
-    // WAV header
-    writeString(view, 0, 'RIFF');
-    view.setUint32(4, 36 + dataLength, true);
-    writeString(view, 8, 'WAVE');
-    writeString(view, 12, 'fmt ');
-    view.setUint32(16, 16, true); // chunk size
-    view.setUint16(20, format, true);
-    view.setUint16(22, numChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
-    view.setUint16(32, numChannels * (bitsPerSample / 8), true);
-    view.setUint16(34, bitsPerSample, true);
-    writeString(view, 36, 'data');
-    view.setUint32(40, dataLength, true);
+    const write = (off, str) => { for (let i = 0; i < str.length; i++) v.setUint8(off + i, str.charCodeAt(i)); };
+    write(0, 'RIFF'); v.setUint32(4, 36 + len, true);
+    write(8, 'WAVE'); write(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true);
+    v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    write(36, 'data'); v.setUint32(40, len, true);
 
-    // Write samples
-    let offset = 44;
-    for (let i = 0; i < samples.length; i++, offset += 2) {
+    let off = 44;
+    for (let i = 0; i < samples.length; i++, off += 2) {
         const s = Math.max(-1, Math.min(1, samples[i]));
-        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
     }
 
-    const blob = new Blob([buffer], { type: 'audio/wav' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
     a.download = 'noteLM-output.wav';
     a.click();
-    URL.revokeObjectURL(url);
 }
 
-function writeString(view, offset, str) {
-    for (let i = 0; i < str.length; i++) {
-        view.setUint8(offset + i, str.charCodeAt(i));
-    }
-}
-
-// --- Paste script parsing ---
-function openPasteModal() {
-    $('#pasteOverlay').style.display = 'flex';
-    $('#pasteTextarea').value = '';
-    $('#pasteTextarea').focus();
-}
-
-function closePasteModal() {
-    $('#pasteOverlay').style.display = 'none';
-}
-
-function parseAndImportScript() {
-    const raw = $('#pasteTextarea').value.trim();
-    if (!raw) {
-        setStatus('Nothing to parse — paste some text first!', 'error');
-        return;
-    }
-
-    // Parse lines matching "Speaker Name: text"
-    // Supports: "Alice: hello", "Speaker 1: hello", "Alice : hello" (with optional space before colon)
-    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const parsed = [];
-    const speakerNames = new Set();
-
-    for (const line of lines) {
-        // Match: anything followed by colon and text
-        // Be flexible: allow "Name:" or "Name :" at the start
-        const match = line.match(/^(.+?)\s*:\s*(.+)$/);
-        if (match) {
-            const name = match[1].trim();
-            const text = match[2].trim();
-            if (name && text) {
-                parsed.push({ speakerName: name, text });
-                speakerNames.add(name);
-            }
-        }
-    }
-
-    if (parsed.length === 0) {
-        setStatus('No lines matched the "Speaker: text" pattern. Try format like: Alice: Hello!', 'error');
-        return;
-    }
-
-    // Create speakers for any new names found
-    // Try to match existing speakers by name first
-    const nameToId = {};
-    let voiceIdx = 0;
-    const voiceKeys = Object.keys(VOICES);
-
-    for (const name of speakerNames) {
-        // Check if speaker already exists
-        const existing = speakers.find(s => s.name.toLowerCase() === name.toLowerCase());
-        if (existing) {
-            nameToId[name] = existing.id;
-        } else {
-            // Create new speaker with rotating voice
-            const newId = addSpeaker(name, voiceKeys[voiceIdx % voiceKeys.length]);
-            nameToId[name] = newId;
-            voiceIdx++;
-        }
-    }
-
-    // Build script lines
-    scriptLines = parsed.map((p, i) => ({
-        id: 'paste_' + Date.now() + '_' + i,
-        speakerId: nameToId[p.speakerName],
-        text: p.text,
-    }));
-
-    renderSpeakers();
-    renderScriptLines();
-    closePasteModal();
-    setStatus(`Imported ${parsed.length} lines with ${speakerNames.size} speaker(s)`, 'ready');
-}
-
-// --- Event listeners ---
-addSpeakerBtn.addEventListener('click', () => addSpeaker());
-addLineBtn.addEventListener('click', () => addScriptLine());
-clearScriptBtn.addEventListener('click', () => {
-    scriptLines = [];
-    renderScriptLines();
-});
-pasteScriptBtn.addEventListener('click', openPasteModal);
-pasteCancelBtn.addEventListener('click', closePasteModal);
-pasteParseBtn.addEventListener('click', parseAndImportScript);
-
-// Close paste modal on backdrop click
-pasteOverlay.addEventListener('click', (e) => {
-    if (e.target === pasteOverlay) closePasteModal();
-});
-loadExampleBtn.addEventListener('click', loadExample);
-generateBtn.addEventListener('click', generateAudio);
-stopBtn.addEventListener('click', stopPlayback);
-downloadBtn.addEventListener('click', downloadWav);
-
-playPauseBtn.addEventListener('click', () => {
-    if (isPlaying) pauseAudio();
-    else playAudio();
-});
-
-seekBar.addEventListener('input', (e) => {
-    seekTo(parseFloat(e.target.value));
-});
-
-volumeSlider.addEventListener('input', (e) => {
-    // Volume is handled at the AudioContext destination level
-    // For simplicity, we'll use a GainNode if needed
-});
+// --- Event Bindings ---
+dom.addSpeakerBtn.addEventListener('click', () => addSpeaker());
+dom.addLineBtn.addEventListener('click', () => addScriptLine());
+dom.clearScriptBtn.addEventListener('click', () => { scriptLines = []; renderScriptLines(); });
+dom.loadExampleBtn.addEventListener('click', loadExample);
+dom.pasteScriptBtn.addEventListener('click', openPasteModal);
+dom.pasteCancelBtn.addEventListener('click', closePasteModal);
+dom.pasteParseBtn.addEventListener('click', parseAndImport);
+dom.pasteOverlay.addEventListener('click', e => { if (e.target === dom.pasteOverlay) closePasteModal(); });
+dom.generateBtn.addEventListener('click', generate);
+dom.stopBtn.addEventListener('click', stopPlayback);
+dom.downloadBtn.addEventListener('click', downloadWav);
+dom.playPauseBtn.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
+dom.seekBar.addEventListener('input', e => seekTo(parseFloat(e.target.value)));
 
 // --- Init ---
-function init() {
-    // Add default speakers
-    addSpeaker('Speaker 1', 'af_heart');
-    addSpeaker('Speaker 2', 'am_puck');
-
-    // Add a couple default lines
-    addScriptLine(speakers[0].id, 'Hello! Welcome to NoteLM.');
-    addScriptLine(speakers[1].id, 'Thanks! This is pretty cool.');
-
-    setStatus('Ready — add speakers and a script, then generate!', 'ready');
-}
-
-init();
+addSpeaker('Alice', 'af_heart');
+addSpeaker('Bob', 'am_puck');
+addScriptLine(speakers[0].id, 'Hello! Welcome to NoteLM.');
+addScriptLine(speakers[1].id, 'Thanks! This is pretty cool.');
+setStatus('Ready', 'ready');
