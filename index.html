@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteLM — Multi-Speaker Text-to-Speech</title>
+    <meta name="description" content="Free browser-based multi-speaker text-to-speech powered by Kokoro. Create conversations with different voices, all running locally in your browser.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎙️</span>
+                <h1>NoteLM</h1>
+            </div>
+            <p class="tagline">Multi-Speaker Text-to-Speech — powered by Kokoro, running in your browser</p>
+            <div class="status-bar" id="statusBar">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Speakers Panel -->
+            <section class="panel speakers-panel">
+                <div class="panel-header">
+                    <h2>🎭 Speakers</h2>
+                    <button class="btn btn-small btn-accent" id="addSpeakerBtn" title="Add a new speaker">
+                        + Add Speaker
+                    </button>
+                </div>
+                <div class="speakers-list" id="speakersList">
+                    <!-- Speakers will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Script Panel -->
+            <section class="panel script-panel">
+                <div class="panel-header">
+                    <h2>📝 Script</h2>
+                    <div class="script-tools">
+                        <button class="btn btn-small btn-secondary" id="clearScriptBtn" title="Clear all lines">Clear</button>
+                        <button class="btn btn-small btn-secondary" id="loadExampleBtn" title="Load example script">Example</button>
+                    </div>
+                </div>
+                <div class="script-lines" id="scriptLines">
+                    <!-- Script lines will be dynamically added here -->
+                </div>
+                <button class="btn btn-add-line" id="addLineBtn">+ Add Line</button>
+            </section>
+
+            <!-- Controls -->
+            <section class="panel controls-panel">
+                <div class="controls-row">
+                    <button class="btn btn-primary btn-large" id="generateBtn">
+                        <span class="btn-icon">▶</span>
+                        <span class="btn-text">Generate & Play</span>
+                    </button>
+                    <button class="btn btn-secondary btn-large" id="downloadBtn" disabled>
+                        <span class="btn-icon">⬇</span>
+                        <span class="btn-text">Download WAV</span>
+                    </button>
+                    <button class="btn btn-secondary btn-large" id="stopBtn" disabled>
+                        <span class="btn-icon">⏹</span>
+                        <span class="btn-text">Stop</span>
+                    </button>
+                </div>
+
+                <!-- Progress -->
+                <div class="progress-section" id="progressSection" style="display:none;">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">Generating...</p>
+                </div>
+
+                <!-- Audio Player -->
+                <div class="audio-player" id="audioPlayer" style="display:none;">
+                    <canvas id="waveformCanvas" width="800" height="80"></canvas>
+                    <div class="player-controls">
+                        <button class="btn btn-icon-only" id="playPauseBtn">▶</button>
+                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                        <input type="range" id="seekBar" min="0" max="100" value="0" class="seek-bar">
+                        <input type="range" id="volumeSlider" min="0" max="100" value="80" class="volume-slider" title="Volume">
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built with <a href="https://github.com/nicholasgasior/kokoro-js" target="_blank">Kokoro JS</a> — all processing happens locally in your browser. No data leaves your device.</p>
+        </footer>
+    </div>
+
+    <!-- Model Loading Overlay -->
+    <div class="overlay" id="loadingOverlay" style="display:none;">
+        <div class="modal">
+            <div class="spinner"></div>
+            <h3 id="loadingTitle">Loading Kokoro Model</h3>
+            <p id="loadingText">Downloading model weights... This may take a moment on first visit.</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="modelProgressBar"></div>
+            </div>
+            <p class="progress-percent" id="modelProgressPercent">0%</p>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
