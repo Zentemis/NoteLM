@@ -48,53 +48,9 @@ let isPlaying = false;
 let playStartTime = 0;
 let playOffset = 0;
 let animFrameId = null;
-let openEditorId = null; // which speaker chip has its editor open
-let currentEngine = 'kokoro'; // kokoro | piper | kitten
+let openEditorId = null;
 let detectedDevice = null; // 'webgpu' | 'wasm'
-let engineModels = {}; // cached models per engine
-
-// Engine configs
-const ENGINES = {
-    kokoro: {
-        name: 'Kokoro',
-        size: '~82 MB',
-        quality: 'Best quality',
-        voices: VOICE_KEYS,
-        getVoiceName: vid => {
-            const v = VOICES[vid];
-            return v ? `${v.name} (${v.gender[0]})` : vid;
-        },
-    },
-    piper: {
-        name: 'Piper',
-        size: '~15 MB',
-        quality: 'Fast, lightweight',
-        voices: ['en_US-hfc_female-medium', 'en_US-amy-medium', 'en_US-danny-low', 'en_GB-alan-low', 'en_GB-alba-medium'],
-        getVoiceName: vid => {
-            const map = {
-                'en_US-hfc_female-medium': 'HFC Female (US)',
-                'en_US-amy-medium': 'Amy (US)',
-                'en_US-danny-low': 'Danny (US)',
-                'en_GB-alan-low': 'Alan (UK)',
-                'en_GB-alba-medium': 'Alba (UK)',
-            };
-            return map[vid] || vid;
-        },
-    },
-    kitten: {
-        name: 'Kitten',
-        size: '~5 MB',
-        quality: 'Smallest, fastest',
-        voices: ['af_aoede', 'af_bella', 'af_heart', 'am_adam', 'am_michael'],
-        getVoiceName: vid => {
-            const map = {
-                'af_aoede': 'Aoede (F)', 'af_bella': 'Bella (F)', 'af_heart': 'Heart (F)',
-                'am_adam': 'Adam (M)', 'am_michael': 'Michael (M)',
-            };
-            return map[vid] || vid;
-        },
-    },
-};
+let kokoroModel = null;
 
 // --- DOM ---
 const $ = s => document.querySelector(s);
@@ -144,8 +100,8 @@ const setStatus = (text, state = 'ready') => {
 const getSpeaker = id => speakers.find(s => s.id === id);
 
 const voiceLabel = vid => {
-    const eng = ENGINES[currentEngine];
-    return eng ? eng.getVoiceName(vid) : vid;
+    const v = VOICES[vid];
+    return v ? `${v.name} (${v.gender[0]})` : vid;
 };
 
 // --- Speaker Management ---
@@ -197,9 +153,10 @@ function renderSpeakerEditor(speaker) {
         <div class="editor-field">
             <span class="editor-label">Voice</span>
             <select class="editor-select" id="editorVoiceSelect">
-                ${ENGINES[currentEngine].voices.map(v => {
+                ${VOICE_KEYS.map(v => {
+                    const vo = VOICES[v];
                     const sel = v === speaker.voice ? 'selected' : '';
-                    return `<option value="${v}" ${sel}>${ENGINES[currentEngine].getVoiceName(v)}</option>`;
+                    return `<option value="${v}" ${sel}>${vo.name} (${vo.gender})</option>`;
                 }).join('')}
             </select>
         </div>
@@ -459,188 +416,69 @@ function updateLoadProgress(pct, msg) {
     if (msg) dom.loadingText.textContent = msg;
 }
 
-async function loadKokoro(device) {
-    if (engineModels.kokoro) return engineModels.kokoro;
-    const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
-    updateLoadProgress(15, `Downloading Kokoro model (~82 MB) — ${device === 'webgpu' ? 'fp32' : 'q8'}…`);
-    engineModels.kokoro = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
-        dtype: device === 'webgpu' ? 'fp32' : 'q8',
-        device,
-        progress_callback: p => {
-            if (p.status === 'progress' && p.total) {
-                const pct = Math.round((p.progress / p.total) * 100);
-                const mb = Math.round(p.total / (1024 * 1024));
-                const dl = Math.round(p.progress / (1024 * 1024));
-                updateLoadProgress(15 + Math.round(pct * 0.83), `Downloading: ${dl} / ${mb} MB (${pct}%)`);
-            } else if (p.status === 'done') {
-                updateLoadProgress(98, 'Initializing model…');
-            }
-        }
-    });
-    return engineModels.kokoro;
-}
-
-async function generateKokoro(text, voice) {
-    const model = await loadKokoro(detectedDevice || 'wasm');
-    const audio = await model.generate(text, { voice });
-    return { samples: audio.audio, sampleRate: 24000 };
-}
-
-// Base URL for thirdparty assets (tts.rocks CDN)
-const TTS_ROCKS_BASE = 'https://tts.rocks';
-
-// Piper needs TTS_ASSET_BASE set so its relative paths resolve to tts.rocks
-window.TTS_ASSET_BASE = TTS_ROCKS_BASE;
-
-async function loadPiper() {
-    if (engineModels.piper) return engineModels.piper;
-    updateLoadProgress(10, 'Loading Piper engine…');
-    try {
-        // Load ONNX Runtime
-        if (typeof ort === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = TTS_ROCKS_BASE + '/thirdparty/ort.min.js';
-                s.onload = resolve;
-                s.onerror = () => reject(new Error('Failed to load ONNX Runtime'));
-                document.head.appendChild(s);
-            });
-        }
-        updateLoadProgress(20, 'Loading Piper TTS module…');
-
-        // Set TTS_ASSET_BASE so piper-tts-proper.js resolves paths to tts.rocks
-        window.TTS_ASSET_BASE = TTS_ROCKS_BASE;
-
-        // Load Piper module
-        await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = TTS_ROCKS_BASE + '/thirdparty/piper/piper-tts-proper.js';
-            s.onload = resolve;
-            s.onerror = () => reject(new Error('Failed to load Piper module'));
-            document.head.appendChild(s);
-        });
-
-        if (!window.ProperPiperTTS) throw new Error('ProperPiperTTS not found');
-
-        updateLoadProgress(30, 'Downloading Piper voice model (~15 MB)…');
-        const piper = new window.ProperPiperTTS('en_US-hfc_female-medium');
-        await piper.init();
-        engineModels.piper = piper;
-        return piper;
-    } catch (e) {
-        console.warn('[NoteLM] Piper load failed, falling back to Kokoro:', e.message);
-        updateLoadProgress(20, 'Piper unavailable — using Kokoro engine instead');
-        return loadKokoro(detectedDevice || 'wasm');
-    }
-}
-
-async function generatePiper(text, voice) {
-    const piper = await loadPiper();
-    if (piper === engineModels.kokoro) return generateKokoro(text, KokoroFallbackVoice(voice));
-    const wavBlob = await piper.synthesize(text, 1.0);
-    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const arrayBuf = await wavBlob.arrayBuffer();
-    const decoded = await audioContext.decodeAudioData(arrayBuf);
-    return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
-}
-
-// Map non-Kokoro voice IDs to valid Kokoro ones for fallback
-function KokoroFallbackVoice(voice) {
-    if (VOICE_KEYS.includes(voice)) return voice;
-    return 'af_heart'; // safe default
-}
-
-async function loadKitten() {
-    if (engineModels.kitten) return engineModels.kitten;
-    updateLoadProgress(10, 'Loading Kitten engine…');
-    try {
-        // Load ONNX Runtime if needed
-        if (typeof ort === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = TTS_ROCKS_BASE + '/thirdparty/ort.min.js';
-                s.onload = resolve;
-                s.onerror = () => reject(new Error('Failed to load ONNX Runtime'));
-                document.head.appendChild(s);
-            });
-        }
-        updateLoadProgress(20, 'Loading Kitten TTS module…');
-
-        const mod = await import(TTS_ROCKS_BASE + '/thirdparty/kitten-tts/kitten-tts-lib.js');
-        const KittenTTS = mod.KittenTTS || mod.default;
-        if (!KittenTTS) throw new Error('KittenTTS class not found in module');
-
-        updateLoadProgress(30, 'Downloading Kitten model (~5 MB)…');
-        const kitten = new KittenTTS();
-        await kitten.init();
-        engineModels.kitten = kitten;
-        return kitten;
-    } catch (e) {
-        console.warn('[NoteLM] Kitten load failed, falling back to Kokoro:', e.message);
-        updateLoadProgress(20, 'Kitten unavailable — using Kokoro engine instead');
-        return loadKokoro(detectedDevice || 'wasm');
-    }
-}
-
-async function generateKitten(text, voice) {
-    const kitten = await loadKitten();
-    if (kitten === engineModels.kokoro) return generateKokoro(text, KokoroFallbackVoice(voice));
-    try {
-        const result = await kitten.generateSpeech(text, voice, 1.0);
-        if (result instanceof Blob) {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const arrayBuf = await result.arrayBuffer();
-            const decoded = await audioContext.decodeAudioData(arrayBuf);
-            return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
-        }
-        return { samples: result.audio || result, sampleRate: result.sampleRate || 24000 };
-    } catch (e) {
-        console.warn('[NoteLM] Kitten generate failed, falling back to Kokoro:', e.message);
-        return generateKokoro(text, voice);
-    }
-}
-
-// Unified generate function
-async function generateLine(text, voice) {
-    switch (currentEngine) {
-        case 'kokoro': return generateKokoro(text, voice);
-        case 'piper':  return generatePiper(text, voice);
-        case 'kitten': return generateKitten(text, voice);
-        default: throw new Error('Unknown engine: ' + currentEngine);
-    }
-}
-
-async function loadCurrentEngine() {
+async function loadModel() {
+    if (kokoroModel) return kokoroModel;
     dom.loadingOverlay.style.display = 'flex';
-    setStatus('Loading…', 'loading');
+    setStatus('Loading Kokoro…', 'loading');
     updateLoadProgress(5, 'Probing hardware…');
 
     try {
-        // WebGPU probe (only matters for Kokoro)
+        // WebGPU probe
         let device = 'wasm';
-        if (currentEngine === 'kokoro') {
-            device = await probeWebGPU();
-            showBackendNotice(device);
-            updateLoadProgress(10, device === 'webgpu'
-                ? '✓ WebGPU found — using GPU acceleration'
-                : '✗ WebGPU not available — using WASM (CPU) fallback');
-            await new Promise(r => setTimeout(r, 500));
-        } else {
-            showBackendNotice('wasm');
-            updateLoadProgress(10, `Loading ${ENGINES[currentEngine].name} (WASM)`);
+        if (navigator.gpu) {
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (adapter) device = 'webgpu';
+            } catch {}
+        }
+        detectedDevice = device;
+
+        // Show backend notice
+        const notice = dom.backendNotice;
+        const noticeText = dom.backendNoticeText;
+        if (notice && noticeText) {
+            notice.style.display = 'flex';
+            if (device === 'webgpu') {
+                notice.className = 'backend-notice webgpu';
+                noticeText.textContent = 'WebGPU active — fastest generation';
+            } else {
+                notice.className = 'backend-notice';
+                noticeText.textContent = 'Using WASM (CPU) — enable WebGPU in chrome://flags for faster generation';
+            }
         }
 
-        // Load the selected engine
-        switch (currentEngine) {
-            case 'kokoro': await loadKokoro(device); break;
-            case 'piper':  await loadPiper(); break;
-            case 'kitten': await loadKitten(); break;
-        }
+        updateLoadProgress(10, device === 'webgpu'
+            ? '✓ WebGPU found — using GPU acceleration'
+            : '✗ WebGPU not available — using WASM fallback');
+        await new Promise(r => setTimeout(r, 500));
+
+        // Import library
+        updateLoadProgress(12, 'Loading Kokoro library…');
+        const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
+
+        // Download model
+        updateLoadProgress(15, `Downloading Kokoro model (~82 MB) — ${device === 'webgpu' ? 'fp32' : 'q8'}…`);
+
+        kokoroModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
+            dtype: device === 'webgpu' ? 'fp32' : 'q8',
+            device,
+            progress_callback: p => {
+                if (p.status === 'progress' && p.total) {
+                    const pct = Math.round((p.progress / p.total) * 100);
+                    const mb = Math.round(p.total / (1024 * 1024));
+                    const dl = Math.round(p.progress / (1024 * 1024));
+                    updateLoadProgress(15 + Math.round(pct * 0.83), `Downloading: ${dl} / ${mb} MB (${pct}%)`);
+                } else if (p.status === 'done') {
+                    updateLoadProgress(98, 'Initializing model…');
+                }
+            }
+        });
 
         updateLoadProgress(100, 'Ready!');
         await new Promise(r => setTimeout(r, 300));
         dom.loadingOverlay.style.display = 'none';
-        setStatus(`${ENGINES[currentEngine].name} loaded`, 'ready');
+        setStatus('Kokoro loaded', 'ready');
+        return kokoroModel;
     } catch (err) {
         dom.loadingOverlay.style.display = 'none';
         setStatus('Load failed: ' + err.message, 'error');
@@ -665,10 +503,10 @@ async function generate() {
     setStatus('Generating…', 'loading');
 
     try {
-        await loadCurrentEngine();
+        await loadModel();
 
         const chunks = [];
-        let sampleRate = 24000;
+        const sampleRate = 24000;
 
         for (let i = 0; i < valid.length; i++) {
             const line = valid[i];
@@ -678,13 +516,12 @@ async function generate() {
             dom.progressBar.style.width = pct + '%';
             dom.progressText.textContent = `Line ${i + 1}/${valid.length} — ${spk?.name || '?'}`;
 
-            // Highlight active line
             scriptLines.forEach(l => l._active = l.id === line.id);
             renderScriptLines();
 
-            const result = await generateLine(line.text, spk?.voice || ENGINES[currentEngine].voices[0]);
-            chunks.push(result.samples);
-            sampleRate = result.sampleRate;
+            const model = await loadModel();
+            const audio = await model.generate(line.text, { voice: spk?.voice || 'af_heart' });
+            chunks.push(audio.audio);
 
             if (i < valid.length - 1) chunks.push(new Float32Array(Math.floor(sampleRate * 0.35)));
         }
@@ -890,34 +727,6 @@ document.addEventListener('keydown', e => {
         e.preventDefault();
         parseAndImport();
     }
-});
-
-// Engine selector
-document.addEventListener('click', e => {
-    const btn = e.target.closest('.engine-btn');
-    if (!btn) return;
-    const engine = btn.dataset.engine;
-    if (!engine || engine === currentEngine) return;
-
-    // Update active state
-    document.querySelectorAll('.engine-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // Switch engine
-    currentEngine = engine;
-    // Don't clear cached models — they persist across switches
-
-    // Update speaker voice options for new engine
-    const eng = ENGINES[engine];
-    speakers.forEach((s, i) => {
-        s.voice = eng.voices[i % eng.voices.length];
-    });
-    renderSpeakers();
-
-    setStatus(`Switched to ${eng.name} — ${eng.size}`, 'ready');
-    // Hide backend notice until model loads again
-    const notice = dom.backendNotice;
-    if (notice) notice.style.display = 'none';
 });
 
 // Close speaker editor portal on outside click
