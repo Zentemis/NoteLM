@@ -82,6 +82,9 @@ const dom = {
     loadingText:     $('#loadingText'),
     statusDot:       $('#statusDot'),
     statusText:      $('#statusText'),
+    // Lazy lookups for elements that may not exist at parse time
+    get pasteTextarea() { return $('#pasteTextarea'); },
+    get editorPortal() { return $('#speakerEditorPortal'); },
 };
 
 // --- Helpers ---
@@ -124,7 +127,7 @@ function toggleEditor(id) {
 // Speaker editor portal — rendered at body level, positioned via JS
 function positionEditor(chipEl) {
     const rect = chipEl.getBoundingClientRect();
-    const editor = document.getElementById('speakerEditorPortal');
+    const editor = dom.editorPortal;
     if (!editor) return;
     editor.style.display = 'block';
     editor.style.position = 'fixed';
@@ -135,7 +138,7 @@ function positionEditor(chipEl) {
 }
 
 function renderSpeakerEditor(speaker) {
-    const portal = document.getElementById('speakerEditorPortal');
+    const portal = dom.editorPortal;
     if (!portal) return;
     portal.innerHTML = `
         <div class="editor-arrow"></div>
@@ -173,7 +176,7 @@ function renderSpeakerEditor(speaker) {
 
 function closeEditor() {
     openEditorId = null;
-    const portal = document.getElementById('speakerEditorPortal');
+    const portal = dom.editorPortal;
     if (portal) { portal.style.display = 'none'; portal.innerHTML = ''; }
 }
 
@@ -625,8 +628,8 @@ dom.seekBar.oninput = e => seekTo(parseFloat(e.target.value));
 dom.pasteScriptBtn.addEventListener('click', e => {
     e.stopPropagation();
     dom.pasteOverlay.style.display = 'flex';
-    dom.pasteTextarea.value = '';
-    setTimeout(() => dom.pasteTextarea.focus(), 50);
+    const ta = dom.pasteTextarea;
+    if (ta) { ta.value = ''; setTimeout(() => ta.focus(), 50); }
 });
 
 dom.pasteCancelBtn.addEventListener('click', e => {
@@ -643,8 +646,9 @@ dom.pasteOverlay.addEventListener('mousedown', e => {
     if (e.target === dom.pasteOverlay) dom.pasteOverlay.style.display = 'none';
 });
 
-dom.pasteTextarea.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+// Ctrl+Enter in paste textarea triggers import — bind via delegation
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && e.target.id === 'pasteTextarea') {
         e.preventDefault();
         parseAndImport();
     }
@@ -653,7 +657,7 @@ dom.pasteTextarea.addEventListener('keydown', e => {
 // Close speaker editor portal on outside click
 document.addEventListener('mousedown', e => {
     if (!openEditorId) return;
-    const portal = document.getElementById('speakerEditorPortal');
+    const portal = dom.editorPortal;
     if (portal && !portal.contains(e.target) && !e.target.closest('.speaker-chip')) {
         closeEditor();
         renderSpeakers();
