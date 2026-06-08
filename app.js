@@ -69,20 +69,29 @@ const ENGINES = {
         name: 'Piper',
         size: '~15 MB',
         quality: 'Fast, lightweight',
-        voices: VOICE_KEYS,
+        voices: ['en_US-hfc_female-medium', 'en_US-amy-medium', 'en_US-danny-low', 'en_GB-alan-low', 'en_GB-alba-medium'],
         getVoiceName: vid => {
-            const v = VOICES[vid];
-            return v ? `${v.name} (${v.gender[0]})` : vid;
+            const map = {
+                'en_US-hfc_female-medium': 'HFC Female (US)',
+                'en_US-amy-medium': 'Amy (US)',
+                'en_US-danny-low': 'Danny (US)',
+                'en_GB-alan-low': 'Alan (UK)',
+                'en_GB-alba-medium': 'Alba (UK)',
+            };
+            return map[vid] || vid;
         },
     },
     kitten: {
         name: 'Kitten',
         size: '~5 MB',
         quality: 'Smallest, fastest',
-        voices: VOICE_KEYS,
+        voices: ['af_aoede', 'af_bella', 'af_heart', 'am_adam', 'am_michael'],
         getVoiceName: vid => {
-            const v = VOICES[vid];
-            return v ? `${v.name} (${v.gender[0]})` : vid;
+            const map = {
+                'af_aoede': 'Aoede (F)', 'af_bella': 'Bella (F)', 'af_heart': 'Heart (F)',
+                'am_adam': 'Adam (M)', 'am_michael': 'Michael (M)',
+            };
+            return map[vid] || vid;
         },
     },
 };
@@ -477,14 +486,38 @@ async function generateKokoro(text, voice) {
     return { samples: audio.audio, sampleRate: 24000 };
 }
 
+// Base URL for thirdparty assets (tts.rocks CDN)
+const TTS_ROCKS_BASE = 'https://tts.rocks';
+
 async function loadPiper() {
     if (engineModels.piper) return engineModels.piper;
     updateLoadProgress(10, 'Loading Piper engine…');
     try {
-        const mod = await import('https://cdn.jsdelivr.net/npm/piper-wasm@latest');
-        const PiperTTS = mod.PiperTTS || mod.default;
-        updateLoadProgress(30, 'Downloading Piper model (~15 MB)…');
-        const piper = new PiperTTS();
+        // Load ONNX Runtime
+        if (typeof ort === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = TTS_ROCKS_BASE + '/thirdparty/ort.min.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load ONNX Runtime'));
+                document.head.appendChild(s);
+            });
+        }
+        updateLoadProgress(20, 'Loading Piper TTS module…');
+
+        // Load Piper module
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = TTS_ROCKS_BASE + '/thirdparty/piper/piper-tts-proper.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load Piper module'));
+            document.head.appendChild(s);
+        });
+
+        if (!window.ProperPiperTTS) throw new Error('ProperPiperTTS not found');
+
+        updateLoadProgress(30, 'Downloading Piper voice model (~15 MB)…');
+        const piper = new window.ProperPiperTTS('en_US-hfc_female-medium');
         await piper.init();
         engineModels.piper = piper;
         return piper;
@@ -496,19 +529,35 @@ async function loadPiper() {
 }
 
 async function generatePiper(text, voice) {
-    const model = await loadPiper();
-    // If model is Kokoro (fallback), use Kokoro API
-    if (model === engineModels.kokoro) return generateKokoro(text, voice);
-    const result = await model.generate(text, voice);
-    return { samples: result.audio || result, sampleRate: result.sampleRate || 22050 };
+    const piper = await loadPiper();
+    if (piper === engineModels.kokoro) return generateKokoro(text, voice);
+    const wavBlob = await piper.synthesize(text, 1.0);
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const arrayBuf = await wavBlob.arrayBuffer();
+    const decoded = await audioContext.decodeAudioData(arrayBuf);
+    return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
 }
 
 async function loadKitten() {
     if (engineModels.kitten) return engineModels.kitten;
     updateLoadProgress(10, 'Loading Kitten engine…');
     try {
-        const mod = await import('https://cdn.jsdelivr.net/npm/kitten-tts-web@latest');
+        // Load ONNX Runtime if needed
+        if (typeof ort === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = TTS_ROCKS_BASE + '/thirdparty/ort.min.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Failed to load ONNX Runtime'));
+                document.head.appendChild(s);
+            });
+        }
+        updateLoadProgress(20, 'Loading Kitten TTS module…');
+
+        const mod = await import(TTS_ROCKS_BASE + '/thirdparty/kitten-tts/kitten-tts-lib.js');
         const KittenTTS = mod.KittenTTS || mod.default;
+        if (!KittenTTS) throw new Error('KittenTTS class not found in module');
+
         updateLoadProgress(30, 'Downloading Kitten model (~5 MB)…');
         const kitten = new KittenTTS();
         await kitten.init();
@@ -522,10 +571,10 @@ async function loadKitten() {
 }
 
 async function generateKitten(text, voice) {
-    const model = await loadKitten();
-    if (model === engineModels.kokoro) return generateKokoro(text, voice);
+    const kitten = await loadKitten();
+    if (kitten === engineModels.kokoro) return generateKokoro(text, voice);
     try {
-        const result = await model.generateSpeech(text, voice, 1.0);
+        const result = await kitten.generateSpeech(text, voice, 1.0);
         if (result instanceof Blob) {
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const arrayBuf = await result.arrayBuffer();
