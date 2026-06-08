@@ -164,6 +164,9 @@ body {
 /* ---- Speakers Strip ---- */
 .speakers-section {
     padding: 0.75rem 1rem;
+    position: relative;
+    z-index: 10;
+    overflow: visible;
 }
 
 .speakers-header {
@@ -177,9 +180,12 @@ body {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
+    overflow-y: visible;
     padding-bottom: 0.25rem;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.08) transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .speakers-strip::-webkit-scrollbar { height: 4px; }
@@ -200,6 +206,11 @@ body {
     white-space: nowrap;
     flex-shrink: 0;
     position: relative;
+    z-index: 1;
+}
+
+.speaker-chip.active {
+    z-index: 200;
 }
 
 .speaker-chip:hover {
@@ -251,20 +262,37 @@ body {
 /* Speaker Editor Popover */
 .speaker-editor {
     position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    background: rgba(15, 23, 42, 0.97);
-    backdrop-filter: blur(24px);
-    border: 1px solid var(--border-hover);
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 15, 30, 0.98);
+    backdrop-filter: blur(32px);
+    border: 1px solid rgba(45, 212, 191, 0.25);
     border-radius: var(--radius-md);
-    padding: 0.75rem;
+    padding: 0.85rem;
     min-width: 260px;
-    z-index: 100;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 300;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 24px rgba(45, 212, 191, 0.08);
     display: none;
 }
 
-.speaker-editor.open { display: block; }
+.speaker-editor.open {
+    display: block;
+}
+
+/* Arrow indicator */
+.speaker-editor::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: rgba(10, 15, 30, 0.98);
+    border-top: 1px solid rgba(45, 212, 191, 0.25);
+    border-left: 1px solid rgba(45, 212, 191, 0.25);
+}
 
 .editor-field {
     display: flex;
@@ -699,14 +727,14 @@ body {
 }
 
 .modal {
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(10, 15, 30, 0.98);
     backdrop-filter: blur(32px);
-    border: 1px solid var(--border-hover);
+    border: 1px solid rgba(45, 212, 191, 0.15);
     border-radius: var(--radius-lg);
     padding: 1.75rem;
-    max-width: 520px;
+    max-width: 580px;
     width: 92%;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 40px rgba(45, 212, 191, 0.05);
 }
 
 .modal h3 {
@@ -740,6 +768,7 @@ body {
 
 .paste-area {
     width: 100%;
+    min-height: 300px;
     background: rgba(255,255,255,0.03);
     color: var(--text-primary);
     border: 1px solid var(--border);

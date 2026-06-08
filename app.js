@@ -264,17 +264,20 @@ function renderScriptLines() {
 }
 
 // --- Paste Parser ---
-function openPasteModal() {
+function openPasteModal(e) {
+    if (e) e.stopPropagation();
     dom.pasteOverlay.style.display = 'flex';
     dom.pasteTextarea.value = '';
-    dom.pasteTextarea.focus();
+    setTimeout(() => dom.pasteTextarea.focus(), 50);
 }
 
-function closePasteModal() {
+function closePasteModal(e) {
+    if (e) e.stopPropagation();
     dom.pasteOverlay.style.display = 'none';
 }
 
-function parseAndImport() {
+function parseAndImport(e) {
+    if (e) e.stopPropagation();
     const raw = dom.pasteTextarea.value.trim();
     if (!raw) { setStatus('Paste some text first!', 'error'); return; }
 
@@ -283,20 +286,21 @@ function parseAndImport() {
     const nameSet = new Set();
 
     for (const line of lines) {
-        const m = line.match(/^(.+?)\s*:\s*(.+)$/);
-        if (m && m[1] && m[2]) {
+        // Match "Name: text" pattern — require at least 2 chars for name
+        const m = line.match(/^(.{2,}?)\s*:\s*(.+)$/);
+        if (m) {
             parsed.push({ name: m[1].trim(), text: m[2].trim() });
             nameSet.add(m[1].trim());
         }
     }
 
     if (!parsed.length) {
-        setStatus('No "Speaker: text" lines found. Check your format!', 'error');
+        setStatus('No "Speaker: text" lines found. Use format: Alice: Hello!', 'error');
         return;
     }
 
-    // Close modal first to avoid event conflicts
-    closePasteModal();
+    // Close modal first
+    dom.pasteOverlay.style.display = 'none';
 
     // Map names -> speaker ids (reuse existing, create new)
     const nameMap = {};
@@ -317,7 +321,6 @@ function parseAndImport() {
         text: p.text,
     }));
 
-    renderSpeakers();
     renderScriptLines();
     setStatus(`Imported ${parsed.length} lines · ${nameSet.size} speaker(s)`, 'ready');
 }
@@ -575,19 +578,47 @@ function downloadWav() {
 }
 
 // --- Event Bindings ---
-dom.addSpeakerBtn.addEventListener('click', () => addSpeaker());
-dom.addLineBtn.addEventListener('click', () => addScriptLine());
-dom.clearScriptBtn.addEventListener('click', () => { scriptLines = []; renderScriptLines(); });
-dom.loadExampleBtn.addEventListener('click', loadExample);
-dom.pasteScriptBtn.addEventListener('click', openPasteModal);
-dom.pasteCancelBtn.addEventListener('click', closePasteModal);
-dom.pasteParseBtn.addEventListener('click', parseAndImport);
-dom.pasteOverlay.addEventListener('mousedown', e => { if (e.target === dom.pasteOverlay) closePasteModal(); });
-dom.generateBtn.addEventListener('click', generate);
-dom.stopBtn.addEventListener('click', stopPlayback);
-dom.downloadBtn.addEventListener('click', downloadWav);
-dom.playPauseBtn.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
-dom.seekBar.addEventListener('input', e => seekTo(parseFloat(e.target.value)));
+// Use direct onclick for reliability
+dom.addSpeakerBtn.onclick = () => addSpeaker();
+dom.addLineBtn.onclick = () => addScriptLine();
+dom.clearScriptBtn.onclick = () => { scriptLines = []; renderScriptLines(); };
+dom.loadExampleBtn.onclick = loadExample;
+dom.generateBtn.onclick = generate;
+dom.stopBtn.onclick = stopPlayback;
+dom.downloadBtn.onclick = downloadWav;
+dom.playPauseBtn.onclick = () => isPlaying ? pauseAudio() : playAudio();
+dom.seekBar.oninput = e => seekTo(parseFloat(e.target.value));
+
+// Paste modal — explicit handlers
+dom.pasteScriptBtn.onclick = e => {
+    e.stopPropagation();
+    dom.pasteOverlay.style.display = 'flex';
+    dom.pasteTextarea.value = '';
+    setTimeout(() => dom.pasteTextarea.focus(), 50);
+};
+
+dom.pasteCancelBtn.onclick = e => {
+    e.stopPropagation();
+    dom.pasteOverlay.style.display = 'none';
+};
+
+dom.pasteParseBtn.onclick = e => {
+    e.stopPropagation();
+    parseAndImport();
+};
+
+// Close paste modal on backdrop click
+dom.pasteOverlay.addEventListener('mousedown', e => {
+    if (e.target === dom.pasteOverlay) dom.pasteOverlay.style.display = 'none';
+});
+
+// Ctrl+Enter in paste textarea triggers import
+dom.pasteTextarea.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        parseAndImport();
+    }
+});
 
 // --- Init ---
 addSpeaker('Alice', 'af_heart');
