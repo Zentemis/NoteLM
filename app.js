@@ -69,28 +69,20 @@ const ENGINES = {
         name: 'Piper',
         size: '~15 MB',
         quality: 'Fast, lightweight',
-        voices: ['en_US-amy-medium', 'en_US-lessac-medium', 'en_US-libritts_r-medium', 'en_GB-alan-medium'],
+        voices: VOICE_KEYS,
         getVoiceName: vid => {
-            const map = {
-                'en_US-amy-medium': 'Amy (US)',
-                'en_US-lessac-medium': 'Lessac (US)',
-                'en_US-libritts_r-medium': 'LibriTTS (US)',
-                'en_GB-alan-medium': 'Alan (UK)',
-            };
-            return map[vid] || vid;
+            const v = VOICES[vid];
+            return v ? `${v.name} (${v.gender[0]})` : vid;
         },
     },
     kitten: {
         name: 'Kitten',
         size: '~5 MB',
         quality: 'Smallest, fastest',
-        voices: ['af_aoede', 'af_bella', 'af_heart', 'am_adam', 'am_michael'],
+        voices: VOICE_KEYS,
         getVoiceName: vid => {
-            const map = {
-                'af_aoede': 'Aoede (F)', 'af_bella': 'Bella (F)', 'af_heart': 'Heart (F)',
-                'am_adam': 'Adam (M)', 'am_michael': 'Michael (M)',
-            };
-            return map[vid] || vid;
+            const v = VOICES[vid];
+            return v ? `${v.name} (${v.gender[0]})` : vid;
         },
     },
 };
@@ -487,44 +479,64 @@ async function generateKokoro(text, voice) {
 
 async function loadPiper() {
     if (engineModels.piper) return engineModels.piper;
-    updateLoadProgress(10, 'Loading Piper TTS engine…');
-    const { PiperTTS } = await import('https://cdn.jsdelivr.net/npm/piper-wasm@latest');
-    updateLoadProgress(30, 'Downloading Piper model (~15 MB)…');
-    const piper = new PiperTTS();
-    await piper.init();
-    engineModels.piper = piper;
-    return piper;
+    updateLoadProgress(10, 'Loading Piper engine…');
+    try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/piper-wasm@latest');
+        const PiperTTS = mod.PiperTTS || mod.default;
+        updateLoadProgress(30, 'Downloading Piper model (~15 MB)…');
+        const piper = new PiperTTS();
+        await piper.init();
+        engineModels.piper = piper;
+        return piper;
+    } catch (e) {
+        console.warn('[NoteLM] Piper load failed, falling back to Kokoro:', e.message);
+        updateLoadProgress(20, 'Piper unavailable — using Kokoro engine instead');
+        return loadKokoro(detectedDevice || 'wasm');
+    }
 }
 
 async function generatePiper(text, voice) {
-    const piper = await loadPiper();
-    const result = await piper.generate(text, voice);
-    // Piper returns Float32Array samples
+    const model = await loadPiper();
+    // If model is Kokoro (fallback), use Kokoro API
+    if (model === engineModels.kokoro) return generateKokoro(text, voice);
+    const result = await model.generate(text, voice);
     return { samples: result.audio || result, sampleRate: result.sampleRate || 22050 };
 }
 
 async function loadKitten() {
     if (engineModels.kitten) return engineModels.kitten;
-    updateLoadProgress(10, 'Loading Kitten TTS engine…');
-    const { KittenTTS } = await import('https://cdn.jsdelivr.net/npm/kitten-tts-web@latest');
-    updateLoadProgress(30, 'Downloading Kitten model (~5 MB)…');
-    const kitten = new KittenTTS();
-    await kitten.init();
-    engineModels.kitten = kitten;
-    return kitten;
+    updateLoadProgress(10, 'Loading Kitten engine…');
+    try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/kitten-tts-web@latest');
+        const KittenTTS = mod.KittenTTS || mod.default;
+        updateLoadProgress(30, 'Downloading Kitten model (~5 MB)…');
+        const kitten = new KittenTTS();
+        await kitten.init();
+        engineModels.kitten = kitten;
+        return kitten;
+    } catch (e) {
+        console.warn('[NoteLM] Kitten load failed, falling back to Kokoro:', e.message);
+        updateLoadProgress(20, 'Kitten unavailable — using Kokoro engine instead');
+        return loadKokoro(detectedDevice || 'wasm');
+    }
 }
 
 async function generateKitten(text, voice) {
-    const kitten = await loadKitten();
-    const result = await kitten.generateSpeech(text, voice, 1.0);
-    // Kitten returns a Blob — decode it
-    if (result instanceof Blob) {
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const arrayBuf = await result.arrayBuffer();
-        const decoded = await audioContext.decodeAudioData(arrayBuf);
-        return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
+    const model = await loadKitten();
+    if (model === engineModels.kokoro) return generateKokoro(text, voice);
+    try {
+        const result = await model.generateSpeech(text, voice, 1.0);
+        if (result instanceof Blob) {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const arrayBuf = await result.arrayBuffer();
+            const decoded = await audioContext.decodeAudioData(arrayBuf);
+            return { samples: decoded.getChannelData(0), sampleRate: decoded.sampleRate };
+        }
+        return { samples: result.audio || result, sampleRate: result.sampleRate || 24000 };
+    } catch (e) {
+        console.warn('[NoteLM] Kitten generate failed, falling back to Kokoro:', e.message);
+        return generateKokoro(text, voice);
     }
-    return { samples: result.audio || result, sampleRate: result.sampleRate || 24000 };
 }
 
 // Unified generate function
