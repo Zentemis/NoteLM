@@ -186,6 +186,81 @@ body {
 
 /* Remove old speaker-editor styles that are no longer used */
 
+/* ---- Engine Selector ---- */
+.engine-section {
+    padding: 0.65rem 1rem;
+}
+
+.engine-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.engine-options {
+    display: flex;
+    gap: 0.4rem;
+    flex: 1;
+}
+
+.engine-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.45rem 0.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: var(--font-body);
+}
+
+.engine-btn:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-surface-hover);
+}
+
+.engine-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.1);
+}
+
+.engine-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.engine-meta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.backend-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.65rem;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: #fbbf24;
+}
+
+.notice-icon { font-size: 0.85rem; }
+
+.backend-notice.webgpu {
+    background: rgba(45, 212, 191, 0.08);
+    border-color: rgba(45, 212, 191, 0.15);
+    color: var(--accent);
+}
+
 /* ---- Speakers Strip ---- */
 .speakers-section {
     padding: 0.75rem 1rem;

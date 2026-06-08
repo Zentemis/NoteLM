@@ -50,6 +50,30 @@ let playStartTime = 0;
 let playOffset = 0;
 let animFrameId = null;
 let openEditorId = null; // which speaker chip has its editor open
+let currentEngine = 'kokoro'; // kokoro | piper | kitten
+let detectedDevice = null; // 'webgpu' | 'wasm'
+
+// Engine configs
+const ENGINES = {
+    kokoro: {
+        name: 'Kokoro',
+        size: '~82 MB',
+        voices: VOICE_KEYS,
+        getVoiceName: vid => VOICES[vid]?.name || vid,
+    },
+    piper: {
+        name: 'Piper',
+        size: '~15 MB',
+        voices: ['en_US-amy-medium', 'en_US-lessac-medium', 'en_US-libritts_r-medium', 'en_GB-alan-medium'],
+        getVoiceName: vid => vid.replace('en_US-', '').replace('en_GB-', '').replace('-medium', ''),
+    },
+    kitten: {
+        name: 'Kitten',
+        size: '~5 MB',
+        voices: ['default'],
+        getVoiceName: () => 'default',
+    },
+};
 
 // --- DOM ---
 const $ = s => document.querySelector(s);
@@ -85,6 +109,9 @@ const dom = {
     // Lazy lookups for elements that may not exist at parse time
     get pasteTextarea() { return $('#pasteTextarea'); },
     get editorPortal() { return $('#speakerEditorPortal'); },
+    get backendNotice() { return $('#backendNotice'); },
+    get backendNoticeText() { return $('#backendNoticeText'); },
+    get engineOptions() { return $('#engineOptions'); },
 };
 
 // --- Helpers ---
@@ -96,8 +123,8 @@ const setStatus = (text, state = 'ready') => {
 const getSpeaker = id => speakers.find(s => s.id === id);
 
 const voiceLabel = vid => {
-    const v = VOICES[vid];
-    return v ? `${v.name} · ${v.gender[0]}` : vid;
+    const eng = ENGINES[currentEngine];
+    return eng ? eng.getVoiceName(vid) : vid;
 };
 
 // --- Speaker Management ---
@@ -149,10 +176,9 @@ function renderSpeakerEditor(speaker) {
         <div class="editor-field">
             <span class="editor-label">Voice</span>
             <select class="editor-select" id="editorVoiceSelect">
-                ${VOICE_KEYS.map(v => {
-                    const vo = VOICES[v];
+                ${ENGINES[currentEngine].voices.map(v => {
                     const sel = v === speaker.voice ? 'selected' : '';
-                    return `<option value="${v}" ${sel}>${vo.name} (${vo.gender}, ${vo.lang})</option>`;
+                    return `<option value="${v}" ${sel}>${ENGINES[currentEngine].getVoiceName(v)}</option>`;
                 }).join('')}
             </select>
         </div>
@@ -380,31 +406,64 @@ function loadExample() {
 }
 
 // --- Kokoro Model ---
+async function probeWebGPU() {
+    if (!navigator.gpu) {
+        console.warn('[NoteLM] navigator.gpu not found');
+        return 'wasm';
+    }
+    try {
+        const adapter = await navigator.gpu.requestAdapter();
+        if (adapter) return 'webgpu';
+    } catch (e) {
+        console.warn('[NoteLM] WebGPU probe failed:', e.message);
+    }
+    return 'wasm';
+}
+
+function showBackendNotice(device) {
+    detectedDevice = device;
+    const notice = dom.backendNotice;
+    const text = dom.backendNoticeText;
+    if (!notice || !text) return;
+
+    notice.style.display = 'flex';
+    if (device === 'webgpu') {
+        notice.className = 'backend-notice webgpu';
+        text.textContent = 'WebGPU active — fastest generation';
+    } else {
+        notice.className = 'backend-notice';
+        text.textContent = 'Using WASM (CPU) — enable WebGPU in Chrome flags for faster generation';
+    }
+}
+
 async function loadModel() {
     if (kokoroModel) return kokoroModel;
     dom.loadingOverlay.style.display = 'flex';
-    setStatus('Loading Kokoro model…', 'loading');
+    setStatus('Probing hardware…', 'loading');
 
     try {
-        const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
-        dom.loadingText.textContent = 'Initializing model…';
+        // Step 1: Probe WebGPU
+        dom.loadingText.textContent = 'Checking WebGPU support…';
+        dom.modelProgressBar.style.width = '5%';
+        dom.modelProgressPercent.textContent = '';
 
-        // Detect WebGPU support, fall back to WASM
-        let device = 'wasm';
-        if (navigator.gpu) {
-            try {
-                const adapter = await navigator.gpu.requestAdapter();
-                if (adapter) {
-                    device = 'webgpu';
-                    dom.loadingText.textContent = 'Using WebGPU acceleration';
-                }
-            } catch (e) {
-                console.warn('[NoteLM] WebGPU not available, falling back to WASM:', e.message);
-            }
-        } else {
-            console.warn('[NoteLM] navigator.gpu not found, using WASM backend');
-        }
-        dom.loadingText.textContent = `Loading model (${device === 'webgpu' ? 'WebGPU' : 'WASM'})…`;
+        const device = await probeWebGPU();
+        showBackendNotice(device);
+
+        dom.loadingText.textContent = device === 'webgpu'
+            ? '✓ WebGPU found — loading with GPU acceleration'
+            : '✗ WebGPU not available — using WASM (CPU) fallback';
+        dom.modelProgressBar.style.width = '10%';
+
+        await new Promise(r => setTimeout(r, 600)); // brief pause to show status
+
+        // Step 2: Import library
+        dom.loadingText.textContent = 'Loading Kokoro library…';
+        const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
+        dom.modelProgressBar.style.width = '15%';
+
+        // Step 3: Download model
+        dom.loadingText.textContent = `Downloading model (~82 MB) — ${device === 'webgpu' ? 'fp32' : 'q8 quantized'}…`;
 
         kokoroModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
             dtype: device === 'webgpu' ? 'fp32' : 'q8',
@@ -412,15 +471,26 @@ async function loadModel() {
             progress_callback: p => {
                 if (p.status === 'progress' && p.total) {
                     const pct = Math.round((p.progress / p.total) * 100);
-                    dom.modelProgressBar.style.width = pct + '%';
-                    dom.modelProgressPercent.textContent = pct + '%';
-                    dom.loadingText.textContent = `Downloading model: ${pct}%`;
+                    const overall = 15 + Math.round(pct * 0.83); // 15% -> 98%
+                    dom.modelProgressBar.style.width = overall + '%';
+                    dom.modelProgressPercent.textContent = overall + '%';
+                    const mb = Math.round(p.total / (1024 * 1024));
+                    const dl = Math.round(p.progress / (1024 * 1024));
+                    dom.loadingText.textContent = `Downloading: ${dl} / ${mb} MB (${pct}%)`;
+                } else if (p.status === 'done') {
+                    dom.modelProgressBar.style.width = '98%';
+                    dom.loadingText.textContent = 'Initializing model…';
                 }
             }
         });
 
+        dom.modelProgressBar.style.width = '100%';
+        dom.modelProgressPercent.textContent = '100%';
+        dom.loadingText.textContent = 'Ready!';
+        await new Promise(r => setTimeout(r, 300));
+
         dom.loadingOverlay.style.display = 'none';
-        setStatus(`Model loaded (${device})`, 'ready');
+        setStatus(`Kokoro loaded (${device})`, 'ready');
         return kokoroModel;
     } catch (err) {
         dom.loadingOverlay.style.display = 'none';
@@ -669,6 +739,34 @@ document.addEventListener('keydown', e => {
         e.preventDefault();
         parseAndImport();
     }
+});
+
+// Engine selector
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.engine-btn');
+    if (!btn) return;
+    const engine = btn.dataset.engine;
+    if (!engine || engine === currentEngine) return;
+
+    // Update active state
+    document.querySelectorAll('.engine-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Switch engine
+    currentEngine = engine;
+    kokoroModel = null; // force re-download for new engine
+
+    // Update speaker voice options for new engine
+    const eng = ENGINES[engine];
+    speakers.forEach((s, i) => {
+        s.voice = eng.voices[i % eng.voices.length];
+    });
+    renderSpeakers();
+
+    setStatus(`Switched to ${eng.name}`, 'ready');
+    // Hide backend notice until model loads again
+    const notice = dom.backendNotice;
+    if (notice) notice.style.display = 'none';
 });
 
 // Close speaker editor portal on outside click

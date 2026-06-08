@@ -38,6 +38,31 @@
             <div class="speakers-strip" id="speakersList"></div>
         </section>
 
+        <!-- Engine Selector -->
+        <section class="glass-panel engine-section">
+            <div class="engine-row">
+                <span class="section-label">Engine</span>
+                <div class="engine-options" id="engineOptions">
+                    <button class="engine-btn active" data-engine="kokoro">
+                        <span class="engine-name">Kokoro</span>
+                        <span class="engine-meta">~82 MB · Best quality</span>
+                    </button>
+                    <button class="engine-btn" data-engine="piper">
+                        <span class="engine-name">Piper</span>
+                        <span class="engine-meta">~15 MB · Fast, lightweight</span>
+                    </button>
+                    <button class="engine-btn" data-engine="kitten">
+                        <span class="engine-name">Kitten</span>
+                        <span class="engine-meta">~5 MB · Smallest, fastest</span>
+                    </button>
+                </div>
+            </div>
+            <div class="backend-notice" id="backendNotice" style="display:none;">
+                <span class="notice-icon">⚡</span>
+                <span class="notice-text" id="backendNoticeText"></span>
+            </div>
+        </section>
+
         <!-- Script Panel -->
         <section class="glass-panel script-section">
             <div class="script-header">
