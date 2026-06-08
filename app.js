@@ -389,21 +389,38 @@ async function loadModel() {
         const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@latest');
         dom.loadingText.textContent = 'Initializing model…';
 
+        // Detect WebGPU support
+        let device = 'cpu';
+        if (navigator.gpu) {
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (adapter) {
+                    device = 'webgpu';
+                    dom.loadingText.textContent = 'Using WebGPU acceleration';
+                }
+            } catch (e) {
+                console.warn('[NoteLM] WebGPU not available, falling back to WASM/CPU:', e.message);
+            }
+        } else {
+            console.warn('[NoteLM] navigator.gpu not found, using CPU backend');
+        }
+        dom.loadingText.textContent = `Loading model (${device === 'webgpu' ? 'WebGPU' : 'CPU/WASM'})…`;
+
         kokoroModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
-            dtype: 'fp32',
-            device: 'webgpu',
+            dtype: device === 'webgpu' ? 'fp32' : 'q8',
+            device,
             progress_callback: p => {
                 if (p.status === 'progress' && p.total) {
                     const pct = Math.round((p.progress / p.total) * 100);
                     dom.modelProgressBar.style.width = pct + '%';
                     dom.modelProgressPercent.textContent = pct + '%';
-                    dom.loadingText.textContent = `Downloading: ${pct}%`;
+                    dom.loadingText.textContent = `Downloading model: ${pct}%`;
                 }
             }
         });
 
         dom.loadingOverlay.style.display = 'none';
-        setStatus('Model loaded', 'ready');
+        setStatus(`Model loaded (${device})`, 'ready');
         return kokoroModel;
     } catch (err) {
         dom.loadingOverlay.style.display = 'none';
