@@ -123,13 +123,13 @@ function toggleEditor(id) {
 
 function renderSpeakers() {
     dom.speakersList.innerHTML = speakers.map(s => `
-        <div class="speaker-chip${openEditorId === s.id ? ' active' : ''}" data-id="${s.id}">
+        <div class="speaker-chip${openEditorId === s.id ? ' active' : ''}" data-chip-id="${s.id}">
             <span class="chip-dot" style="background:${s.color}"></span>
             <span class="chip-name">${s.name}</span>
             <span class="chip-voice">${voiceLabel(s.voice)}</span>
             <button class="chip-remove" data-remove="${s.id}" title="Remove">×</button>
             ${openEditorId === s.id ? `
-                <div class="speaker-editor open" data-editor="${s.id}">
+                <div class="speaker-editor open" onclick="event.stopPropagation()">
                     <div class="editor-field">
                         <span class="editor-label">Name</span>
                         <input class="editor-input" type="text" value="${s.name}" data-edit="name" data-id="${s.id}">
@@ -152,8 +152,9 @@ function renderSpeakers() {
     // Bind chip click -> toggle editor
     dom.speakersList.querySelectorAll('.speaker-chip').forEach(chip => {
         chip.addEventListener('click', e => {
+            // Don't toggle if clicking remove btn, editor inputs, or inside editor
             if (e.target.closest('.chip-remove') || e.target.closest('.speaker-editor')) return;
-            toggleEditor(chip.dataset.id);
+            toggleEditor(chip.dataset.chipId);
         });
     });
 
@@ -165,28 +166,32 @@ function renderSpeakers() {
         });
     });
 
-    // Bind editor inputs
+    // Bind editor inputs — update speaker on change
     dom.speakersList.querySelectorAll('.editor-input, .editor-select').forEach(el => {
         el.addEventListener('change', () => {
             const spk = getSpeaker(el.dataset.id);
             if (spk) spk[el.dataset.edit] = el.value;
             renderSpeakers();
         });
-        el.addEventListener('click', e => e.stopPropagation());
+        el.addEventListener('input', () => {
+            // Live update name in chip
+            const spk = getSpeaker(el.dataset.id);
+            if (spk && el.dataset.edit === 'name') spk.name = el.value;
+        });
     });
 
     // Close editor on outside click
     if (openEditorId) {
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             const handler = e => {
-                if (!e.target.closest('.speaker-chip')) {
+                if (!e.target.closest(`[data-chip-id="${openEditorId}"]`)) {
                     openEditorId = null;
-                    renderSpeakers();
                     document.removeEventListener('click', handler);
+                    renderSpeakers();
                 }
             };
             document.addEventListener('click', handler);
-        }, 0);
+        });
     }
 
     updateLineSpeakerOptions();
@@ -290,13 +295,20 @@ function parseAndImport() {
         return;
     }
 
+    // Close modal first to avoid event conflicts
+    closePasteModal();
+
     // Map names -> speaker ids (reuse existing, create new)
     const nameMap = {};
     let vi = 0;
     for (const name of nameSet) {
         const existing = speakers.find(s => s.name.toLowerCase() === name.toLowerCase());
-        nameMap[name] = existing ? existing.id : addSpeaker(name, VOICE_KEYS[vi % VOICE_KEYS.length]);
-        vi++;
+        if (existing) {
+            nameMap[name] = existing.id;
+        } else {
+            nameMap[name] = addSpeaker(name, VOICE_KEYS[vi % VOICE_KEYS.length]);
+            vi++;
+        }
     }
 
     scriptLines = parsed.map((p, i) => ({
@@ -307,7 +319,6 @@ function parseAndImport() {
 
     renderSpeakers();
     renderScriptLines();
-    closePasteModal();
     setStatus(`Imported ${parsed.length} lines · ${nameSet.size} speaker(s)`, 'ready');
 }
 
@@ -571,7 +582,7 @@ dom.loadExampleBtn.addEventListener('click', loadExample);
 dom.pasteScriptBtn.addEventListener('click', openPasteModal);
 dom.pasteCancelBtn.addEventListener('click', closePasteModal);
 dom.pasteParseBtn.addEventListener('click', parseAndImport);
-dom.pasteOverlay.addEventListener('click', e => { if (e.target === dom.pasteOverlay) closePasteModal(); });
+dom.pasteOverlay.addEventListener('mousedown', e => { if (e.target === dom.pasteOverlay) closePasteModal(); });
 dom.generateBtn.addEventListener('click', generate);
 dom.stopBtn.addEventListener('click', stopPlayback);
 dom.downloadBtn.addEventListener('click', downloadWav);
