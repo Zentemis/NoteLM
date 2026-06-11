@@ -178,7 +178,6 @@ export function renderScriptLines() {
 
     return `
       <div class="script-line${line._active ? ' active' : ''}${line.selected ? ' selected' : ''}${isEmpty ? ' empty' : ''}" data-id="${line.id}" data-idx="${i}">
-        <div class="line-select-gutter${line.selected ? ' selected' : ''}" data-gutter-idx="${i}"><div class="gutter-dot${line.selected ? ' selected' : ''}"></div></div>
         <div class="line-accent" style="background:${color}"></div>
         <span class="line-number">${statusDot}${i + 1}</span>
         <select class="line-speaker-select" data-lid="${line.id}">
@@ -192,6 +191,7 @@ export function renderScriptLines() {
           ${regenBtn}
           <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
         </div>
+        <div class="line-select-gutter${line.selected ? ' selected' : ''}" data-gutter-idx="${i}"><div class="gutter-dot${line.selected ? ' selected' : ''}"></div></div>
       </div>
     `;
   }).join('');
