@@ -24,6 +24,7 @@ import {
   seekTo, downloadWav,
 } from './audio.js';
 import { drawMainWaveform } from './waveform.js';
+import { initScrollPanelHeightManager } from './src/script-panel-height.js';
 
 // ===== Interactive waveform (main player) =====
 let waveformSamples = null;
@@ -153,6 +154,7 @@ document.addEventListener('mousedown', e => {
 
 // ===== Init =====
 initWaveformInteraction();
+initScrollPanelHeightManager();
 addSpeaker('Alice', 'af_heart');
 addSpeaker('Bob', 'am_puck');
 addScriptLine(speakers[0].id, 'Hello! Welcome to NoteLM.');

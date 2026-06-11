@@ -52,7 +52,9 @@
                     <button class="btn-glass btn-danger" id="clearScriptBtn">Clear</button>
                 </div>
             </div>
-            <div class="script-lines" id="scriptLines"></div>
+            <div class="script-lines" id="scriptLines" data-scroll-shadow="bottom"></div>
+            <!-- Screen reader announcements for dynamic content -->
+            <div id="scriptAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
             <button class="btn-add-line" id="addLineBtn">+ Add line</button>
         </section>
 

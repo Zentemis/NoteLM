@@ -10,6 +10,7 @@ import {
 import { addSpeaker, renderSpeakers } from './speakers.js';
 import { ICON } from './icons.js';
 import { drawMiniWaveform } from './waveform.js';
+import { onScriptLinesRendered } from './src/script-panel-height.js';
 
 // ===== Selection State =====
 let isDragging = false;
@@ -265,6 +266,9 @@ export function renderScriptLines() {
   });
 
   updateSelectionUI();
+
+  // Notify panel height manager to re-observe textareas and recalculate
+  onScriptLinesRendered();
 }
 
 // ===== Paste Parser =====
