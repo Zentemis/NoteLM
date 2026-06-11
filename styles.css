@@ -184,8 +184,6 @@ body {
     border-left: 1px solid rgba(45, 212, 191, 0.3);
 }
 
-/* Remove old speaker-editor styles that are no longer used */
-
 /* ---- Engine Selector ---- */
 .engine-section {
     padding: 0.65rem 1rem;
@@ -299,11 +297,6 @@ body {
     transition: all var(--transition);
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-.speaker-chip.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-dim);
 }
 
 .speaker-chip:hover {
