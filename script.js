@@ -8,6 +8,7 @@ import {
   setSpeakers, setScriptLines,
 } from './state.js';
 import { addSpeaker, renderSpeakers } from './speakers.js';
+import { ICON } from './icons.js';
 import { drawMiniWaveform } from './waveform.js';
 
 // ===== Selection State =====
@@ -168,12 +169,12 @@ export function renderScriptLines() {
 
     // Regenerate button
     const regenBtn = hasAudio
-      ? `<button class="line-regen" data-regen="${line.id}" title="Regenerate this line">⟳</button>`
+      ? `<button class="line-regen" data-regen="${line.id}" title="Regenerate this line">${ICON.refreshCw}</button>`
       : '';
 
     // Play button
     const playBtn = hasAudio
-      ? `<button class="line-play" data-play-line="${line.id}" title="Play this line">▶</button>`
+      ? `<button class="line-play" data-play-line="${line.id}" title="Play this line">${ICON.play}</button>`
       : '';
 
     return `
@@ -189,7 +190,7 @@ export function renderScriptLines() {
           ${durationHtml}
           ${playBtn}
           ${regenBtn}
-          <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
+          <button class="line-remove" data-remove="${line.id}" title="Remove">${ICON.close}</button>
         </div>
         <div class="line-select-gutter${line.selected ? ' selected' : ''}" data-gutter-idx="${i}"><div class="gutter-dot${line.selected ? ' selected' : ''}"></div></div>
       </div>

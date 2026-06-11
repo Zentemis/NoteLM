@@ -284,6 +284,25 @@ body {
 .speakers-strip::-webkit-scrollbar-track { background: transparent; }
 .speakers-strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 
+/* SVG Icons */
+.svg-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.svg-icon.svg-xs { width: 12px; height: 12px; }
+.svg-icon.svg-sm { width: 16px; height: 16px; }
+.svg-icon.svg-md { width: 20px; height: 20px; }
+.svg-icon.svg-lg { width: 24px; height: 24px; }
+.logo-icon .svg-icon { width: 36px; height: 36px; }
+.btn-primary .svg-icon,
+.btn-glass .svg-icon { opacity: 0.9; }
+.footer-link .svg-icon { opacity: 0.7; }
+.privacy-icon .svg-icon { width: 40px; height: 40px; }
+.privacy-card-icon .svg-icon { width: 28px; height: 28px; }
+
 /* Speaker Chip */
 .speaker-chip {
     display: flex;

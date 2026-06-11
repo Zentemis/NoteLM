@@ -5,6 +5,7 @@
 // ============================================
 
 import { CONFIG } from './config.js';
+import { ICON } from './icons.js';
 import {
   speakers, scriptLines,
   audioContext, currentAudioBuffer, currentSource,
@@ -273,7 +274,7 @@ function createBufferSource() {
   source.connect(audioContext.destination);
   source.onended = () => {
     setIsPlaying(false);
-    dom.playPauseBtn.textContent = '▶';
+    dom.playPauseBtn.innerHTML = ICON.play;
     cancelAnimationFrame(animFrameId);
   };
   setCurrentSource(source);
@@ -290,7 +291,7 @@ export function playAudio() {
   setPlayOffset(0);
   source.start(0);
   setIsPlaying(true);
-  dom.playPauseBtn.textContent = '⏸';
+  dom.playPauseBtn.innerHTML = ICON.pause;
 }
 
 export function pauseAudio() {
@@ -299,7 +300,7 @@ export function pauseAudio() {
   currentSource.stop();
   setCurrentSource(null);
   setIsPlaying(false);
-  dom.playPauseBtn.textContent = '▶';
+  dom.playPauseBtn.innerHTML = ICON.play;
   cancelAnimationFrame(animFrameId);
 }
 
@@ -308,7 +309,7 @@ export function stopPlayback() {
   setCurrentSource(null);
   setIsPlaying(false);
   setPlayOffset(0);
-  dom.playPauseBtn.textContent = '▶';
+  dom.playPauseBtn.innerHTML = ICON.play;
   cancelAnimationFrame(animFrameId);
   dom.timeDisplay.textContent = '0:00';
 }
@@ -323,7 +324,7 @@ export function seekTo(pct) {
     source.start(0, playOffset);
     setIsPlaying(true);
     setPlayStartTime(audioContext.currentTime);
-    dom.playPauseBtn.textContent = '⏸';
+    dom.playPauseBtn.innerHTML = ICON.pause;
   }
 }
 
