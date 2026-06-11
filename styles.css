@@ -450,7 +450,7 @@ body {
 /* Script Line */
 .script-line {
     display: grid;
-    grid-template-columns: 2rem 3px 2.5rem 120px 1fr auto;
+    grid-template-columns: 3px 2.5rem 120px 1fr auto;
     gap: 0;
     align-items: stretch;
     background: var(--bg-surface);
@@ -460,14 +460,20 @@ body {
     overflow: hidden;
 }
 
-/* Selection checkbox column */
+/* Selection checkbox — inside .line-actions, show on hover or when selected */
 .line-select-col {
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     position: relative;
+    opacity: 0;
+    transition: opacity var(--transition);
+    padding: 0 0.15rem;
 }
+
+.script-line:hover .line-select-col,
+.script-line.selected .line-select-col { opacity: 1; }
 
 .line-checkbox {
     position: absolute;
@@ -506,10 +512,6 @@ body {
     transform: rotate(45deg) translateY(-1px);
 }
 
-/* Hide checkbox column by default, show on hover or when selected */
-.line-select-col { opacity: 0; transition: opacity var(--transition); }
-.script-line:hover .line-select-col { opacity: 1; }
-.script-line.selected .line-select-col { opacity: 1; }
 
 /* Selected row highlight */
 .script-line.selected {

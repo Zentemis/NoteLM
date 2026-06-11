@@ -134,10 +134,6 @@ export function renderScriptLines() {
 
     return `
       <div class="script-line${line._active ? ' active' : ''}${line.selected ? ' selected' : ''}${isEmpty ? ' empty' : ''}" data-id="${line.id}">
-        <label class="line-select-col">
-          <input type="checkbox" class="line-checkbox" data-select="${line.id}" ${line.selected ? 'checked' : ''} />
-          <span class="line-checkbox-visual"></span>
-        </label>
         <div class="line-accent" style="background:${color}"></div>
         <span class="line-number">${statusDot}${i + 1}</span>
         <select class="line-speaker-select" data-lid="${line.id}">
@@ -149,6 +145,10 @@ export function renderScriptLines() {
           ${durationHtml}
           ${playBtn}
           ${regenBtn}
+          <label class="line-select-col" data-select="${line.id}">
+            <input type="checkbox" class="line-checkbox" ${line.selected ? 'checked' : ''} />
+            <span class="line-checkbox-visual"></span>
+          </label>
           <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
         </div>
       </div>
@@ -190,11 +190,12 @@ export function renderScriptLines() {
     btn.addEventListener('click', () => removeScriptLine(btn.dataset.remove));
   });
 
-  // Checkbox selection
-  dom.scriptLines.querySelectorAll('.line-checkbox').forEach(cb => {
-    cb.addEventListener('click', e => {
+  // Checkbox selection — listen on label (not hidden checkbox) for shift+click
+  dom.scriptLines.querySelectorAll('.line-select-col').forEach(label => {
+    label.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
-      toggleLineSelect(cb.dataset.select, e.shiftKey);
+      toggleLineSelect(label.dataset.select, e.shiftKey);
     });
   });
 
