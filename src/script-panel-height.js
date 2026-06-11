@@ -60,8 +60,6 @@ function recalculateLayout() {
     currentMaxHeight = clamped;
     scrollContainer.style.maxHeight = clamped + 'px';
   }
-
-
 }
 
 /** Observe textarea sizes — recalculate when they grow/shrink. */

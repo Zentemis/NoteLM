@@ -11,7 +11,7 @@ import {
   audioContext, currentAudioBuffer, currentSource,
   isPlaying, playStartTime, playOffset, animFrameId,
   isGenerating, kokoroModel, detectedDevice, dom,
-  getSpeaker, setStatus, fmtTime,
+  getSpeaker, setStatus,
   setAudioContext, setCurrentAudioBuffer, setCurrentSource,
   setIsPlaying, setPlayStartTime, setPlayOffset,
   setAnimFrameId, setIsGenerating, setKokoroModel,
@@ -165,46 +165,42 @@ export async function generate() {
   if (!valid.length) { setStatus('Add some script lines first!', 'error'); return; }
   if (!speakers.length) { setStatus('Add at least one speaker!', 'error'); return; }
 
-  // Determine which lines need generation
   const dirty = valid.filter(l => l.dirty || !l.audioBuffer);
   if (!dirty.length) {
-    // All clean — just merge and play
     const merged = mergeLineBuffers();
     if (merged) {
       setStatus(`All ${valid.length} lines already generated — playing`);
-      dom.audioPlayer.style.display = 'flex';
-      dom.downloadBtn.disabled = false;
+      showPlayer();
     }
     return merged;
   }
 
+  return runGeneration(dirty, `Generating ${dirty.length} of ${valid.length} lines`);
+}
+
+// ===== Shared generation runner =====
+async function runGeneration(lines, label) {
+  if (isGenerating || !lines.length) return null;
+
   setIsGenerating(true);
   dom.generateBtn.disabled = true;
-  dom.downloadBtn.disabled = true;
   dom.stopBtn.disabled = false;
   dom.progressSection.style.display = 'flex';
-  dom.audioPlayer.style.display = 'none';
-  setStatus(`Generating ${dirty.length} of ${valid.length} lines…`, 'loading');
+  setStatus(`${label}…`, 'loading');
 
   try {
     const model = await loadModel();
-
-    for (let i = 0; i < dirty.length; i++) {
-      await generateLineAudio(model, dirty[i], i, dirty.length);
+    for (let i = 0; i < lines.length; i++) {
+      await generateLineAudio(model, lines[i], i, lines.length);
     }
-
     scriptLines.forEach(l => l._active = false);
     renderScriptLines();
 
-    // Merge all line buffers (clean + newly generated)
     const merged = mergeLineBuffers();
-
+    if (merged) showPlayer();
     dom.progressBar.style.width = '100%';
     dom.progressText.textContent = 'Done!';
-    dom.audioPlayer.style.display = 'flex';
-    dom.downloadBtn.disabled = false;
-    setStatus(`Generated ${dirty.length} lines · ${valid.length} total`);
-
+    setStatus(`${label} — done`);
     return merged;
   } catch (err) {
     setStatus('Error: ' + err.message, 'error');
@@ -217,41 +213,10 @@ export async function generate() {
   }
 }
 
-// ===== Shared generation runner =====
-async function runGeneration(lines, label) {
-  if (isGenerating || !lines.length) return null;
-
-  setIsGenerating(true);
-  dom.generateBtn.disabled = true;
-  dom.stopBtn.disabled = false;
-  dom.progressSection.style.display = 'flex';
-  setStatus(`${label} ${lines.length} line${lines.length > 1 ? 's' : ''}…`, 'loading');
-
-  try {
-    const model = await loadModel();
-    for (let i = 0; i < lines.length; i++) {
-      await generateLineAudio(model, lines[i], i, lines.length);
-    }
-    scriptLines.forEach(l => l._active = false);
-    renderScriptLines();
-
-    const merged = mergeLineBuffers();
-    if (merged) {
-      dom.audioPlayer.style.display = 'flex';
-      dom.downloadBtn.disabled = false;
-    }
-    dom.progressBar.style.width = '100%';
-    dom.progressText.textContent = 'Done!';
-    setStatus(`${label} ${lines.length} line${lines.length > 1 ? 's' : ''} — done`);
-    return merged;
-  } catch (err) {
-    setStatus('Error: ' + err.message, 'error');
-    return null;
-  } finally {
-    setIsGenerating(false);
-    dom.generateBtn.disabled = false;
-    dom.stopBtn.disabled = true;
-  }
+/** Show player and enable download after successful generation. */
+function showPlayer() {
+  dom.audioPlayer.style.display = 'flex';
+  dom.downloadBtn.disabled = false;
 }
 
 // ===== Regenerate Single Line =====

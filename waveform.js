@@ -39,19 +39,27 @@ export function renderBars(ctx, w, h, samples, {
 }
 
 /**
- * Draw a full waveform with DPR scaling, progress overlay, and playhead.
- * Used by the main player canvas.
+ * Set up a canvas with DPR scaling and return context + CSS dimensions.
+ * @returns {{ ctx: CanvasRenderingContext2D, w: number, h: number }}
  */
-export function drawMainWaveform(canvas, samples, progress = 0) {
-  if (!canvas || !samples) return;
+function setupCanvas(canvas) {
   const ctx = canvas.getContext('2d');
   const dpr = devicePixelRatio || 1;
   canvas.width = canvas.clientWidth * dpr;
   canvas.height = canvas.clientHeight * dpr;
   ctx.scale(dpr, dpr);
-
   const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+/**
+ * Draw a full waveform with DPR scaling, progress overlay, and playhead.
+ * Used by the main player canvas.
+ */
+export function drawMainWaveform(canvas, samples, progress = 0) {
+  if (!canvas || !samples) return;
+  const { ctx, w, h } = setupCanvas(canvas);
 
   renderBars(ctx, w, h, samples, {
     playedColor: 'rgba(45, 212, 191, 0.9)',
@@ -59,7 +67,6 @@ export function drawMainWaveform(canvas, samples, progress = 0) {
     progress,
   });
 
-  // Playhead
   if (progress > 0) {
     const x = Math.round(progress * w);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -73,14 +80,7 @@ export function drawMainWaveform(canvas, samples, progress = 0) {
  */
 export function drawMiniWaveform(canvas, samples, progress = 0) {
   if (!canvas || !samples) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  ctx.scale(dpr, dpr);
-
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  ctx.clearRect(0, 0, w, h);
+  const { ctx, w, h } = setupCanvas(canvas);
 
   renderBars(ctx, w, h, samples, {
     playedColor: 'rgba(45, 212, 191, 0.7)',

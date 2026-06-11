@@ -2,7 +2,7 @@
 // NoteLM — Shared State & DOM References
 // ============================================
 
-import { VOICES, VOICE_KEYS, CONFIG } from './config.js';
+import { VOICE_KEYS, CONFIG } from './config.js';
 
 // ===== State =====
 export let speakers = [];
@@ -18,6 +18,22 @@ export let animFrameId = null;
 export let openEditorId = null;
 export let detectedDevice = null;
 export let kokoroModel = null;
+
+// Mutable setters — ES module exports are live bindings but reassigning
+// a primitive export inside the module doesn't propagate to importers.
+export const setSpeakers = val => { speakers.length = 0; speakers.push(...val); };
+export const setScriptLines = val => { scriptLines.length = 0; scriptLines.push(...val); };
+export const setIsGenerating = val => { isGenerating = val; };
+export const setAudioContext = val => { audioContext = val; };
+export const setCurrentAudioBuffer = val => { currentAudioBuffer = val; };
+export const setCurrentSource = val => { currentSource = val; };
+export const setIsPlaying = val => { isPlaying = val; };
+export const setPlayStartTime = val => { playStartTime = val; };
+export const setPlayOffset = val => { playOffset = val; };
+export const setAnimFrameId = val => { animFrameId = val; };
+export const setOpenEditorId = val => { openEditorId = val; };
+export const setDetectedDevice = val => { detectedDevice = val; };
+export const setKokoroModel = val => { kokoroModel = val; };
 
 // ===== DOM =====
 const $ = s => document.querySelector(s);
@@ -66,21 +82,5 @@ export const setStatus = (text, state = 'ready') => {
 };
 
 export const getSpeaker = id => speakers.find(s => s.id === id);
-export const voiceLabel = vid => { const v = VOICES[vid]; return v ? `${v.name} (${v.gender[0]})` : vid; };
+export const voiceLabel = vid => { const v = CONFIG.voices[vid]; return v ? `${v.name} (${v.gender[0]})` : vid; };
 export const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-
-// Mutable setters (needed because ES module exports are live bindings but
-// reassigning a primitive export inside the module doesn't propagate).
-export const setSpeakers = val => { speakers.length = 0; speakers.push(...val); };
-export const setScriptLines = val => { scriptLines.length = 0; scriptLines.push(...val); };
-export const setIsGenerating = val => { isGenerating = val; };
-export const setAudioContext = val => { audioContext = val; };
-export const setCurrentAudioBuffer = val => { currentAudioBuffer = val; };
-export const setCurrentSource = val => { currentSource = val; };
-export const setIsPlaying = val => { isPlaying = val; };
-export const setPlayStartTime = val => { playStartTime = val; };
-export const setPlayOffset = val => { playOffset = val; };
-export const setAnimFrameId = val => { animFrameId = val; };
-export const setOpenEditorId = val => { openEditorId = val; };
-export const setDetectedDevice = val => { detectedDevice = val; };
-export const setKokoroModel = val => { kokoroModel = val; };

@@ -12,6 +12,11 @@ import {
 // Lazy import to break circular dep with script.js
 const getScriptModule = () => import('./script.js');
 
+// HTML-escape for safe innerHTML interpolation
+function escapeHTML(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // Track which language filter is active in the editor
 let editorLangFilter = null;
 
@@ -89,7 +94,7 @@ function renderSpeakerEditor(speaker) {
     <div class="editor-arrow"></div>
     <div class="editor-field">
       <span class="editor-label">Name</span>
-      <input class="editor-input" type="text" value="${speaker.name}" id="editorNameInput">
+      <input class="editor-input" type="text" value="${escapeHTML(speaker.name)}" id="editorNameInput">
     </div>
     <div class="editor-field">
       <div class="editor-label-row">

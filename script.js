@@ -141,6 +141,7 @@ export function updateLineSpeakerOptions() {
 
 // ===== Render =====
 export function renderScriptLines() {
+  if (!dom.scriptLines) return;
   dom.scriptLines.innerHTML = scriptLines.map((line, i) => {
     const spk = getSpeaker(line.speakerId);
     const color = spk?.color || '#475569';
