@@ -42,8 +42,6 @@ export const dom = {
   waveformCanvas:  $('#waveformCanvas'),
   playPauseBtn:    $('#playPauseBtn'),
   timeDisplay:     $('#timeDisplay'),
-  seekBar:         $('#seekBar'),
-  volumeSlider:    $('#volumeSlider'),
   loadingOverlay:  $('#loadingOverlay'),
   modelProgressBar:    $('#modelProgressBar'),
   modelProgressPercent: $('#modelProgressPercent'),

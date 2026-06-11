@@ -86,7 +86,6 @@ function tickSeekBar() {
     : playOffset;
   const dur = currentAudioBuffer.duration;
   const pct = Math.min((elapsed / dur) * 100, 100);
-  dom.seekBar.value = pct;
   dom.timeDisplay.textContent = fmtTime(elapsed);
   if (waveformSamples) drawWaveform(waveformSamples, pct / 100);
   if (isPlaying) setAnimFrameId(requestAnimationFrame(tickSeekBar));
@@ -143,10 +142,6 @@ dom.playPauseBtn.onclick = () => {
     playAudio();
     setAnimFrameId(requestAnimationFrame(tickSeekBar));
   }
-};
-dom.seekBar.oninput = e => {
-  seekTo(parseFloat(e.target.value));
-  if (waveformSamples) drawWaveform(waveformSamples, parseFloat(e.target.value) / 100);
 };
 
 // Paste modal

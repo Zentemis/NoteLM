@@ -217,7 +217,6 @@ export function stopPlayback() {
   setPlayOffset(0);
   dom.playPauseBtn.textContent = '▶';
   cancelAnimationFrame(animFrameId);
-  dom.seekBar.value = 0;
   dom.timeDisplay.textContent = '0:00';
 }
 
