@@ -65,7 +65,6 @@ export const dom = {
   statusDot:       $('#statusDot'),
   statusText:      $('#statusText'),
   selectionBar:        $('#selectionBar'),
-  regenerateSelectedBtn: $('#regenerateSelectedBtn'),
   clearSelectionBtn:   $('#clearSelectionBtn'),
   get pasteTextarea() { return $('#pasteTextarea'); },
   get editorPortal()  { return $('#speakerEditorPortal'); },

@@ -16,10 +16,10 @@ import {
 import {
   addScriptLine, renderScriptLines,
   openPasteModal, closePasteModal, parseAndImport,
-  loadExample, clearSelection, getSelectedLines,
+  loadExample, clearSelection,
 } from './script.js';
 import {
-  generate, regenerateLine, regenerateSelected,
+  generate, regenerateLine,
   playAudio, pauseAudio, stopPlayback, ensureAudioContext,
   seekTo, downloadWav,
 } from './audio.js';
@@ -80,15 +80,6 @@ async function handleGenerate() {
   playMerged(merged);
 }
 
-async function handleRegenerateSelected() {
-  const selected = getSelectedLines();
-  if (!selected.length) return;
-  const ids = selected.map(l => l.id);
-  clearSelection();
-  const merged = await regenerateSelected(ids);
-  playMerged(merged);
-}
-
 // ===== Event Bindings =====
 dom.addSpeakerBtn.onclick = () => addSpeaker();
 dom.addLineBtn.onclick = () => addScriptLine();
@@ -103,7 +94,6 @@ dom.playPauseBtn.onclick = () => {
 };
 
 // Selection bar
-dom.regenerateSelectedBtn.onclick = handleRegenerateSelected;
 dom.clearSelectionBtn.onclick = () => { clearSelection(); renderScriptLines(); };
 
 // Play single line (dispatched from script.js)
@@ -153,24 +143,28 @@ document.addEventListener('mousedown', e => {
 });
 
 // ===== Generate Hover Preview =====
-function applyGeneratePreview(mode) {
+function applyGeneratePreview() {
   if (!dom.scriptLines) return;
   dom.scriptLines.classList.add('generate-hover');
-  const lineEls = dom.scriptLines.querySelectorAll('.script-line');
-  lineEls.forEach(el => {
+
+  const selected = scriptLines.filter(l => l.selected && l.text.trim());
+  const hasSelection = selected.length > 0;
+
+  dom.scriptLines.querySelectorAll('.script-line').forEach(el => {
     const line = scriptLines.find(l => l.id === el.dataset.id);
     if (!line) return;
-    if (mode === 'generate') {
-      // Highlight lines that will be generated, dim those that will be skipped
-      const willGenerate = line.dirty || !line.audioBuffer;
-      el.classList.toggle('will-generate', willGenerate);
-      el.classList.toggle('will-skip', !willGenerate);
-    } else if (mode === 'regenerate') {
-      // Highlight selected lines that will be regenerated, dim everything else
-      const willRegen = line.selected && line.text.trim();
-      el.classList.toggle('will-generate', willRegen);
-      el.classList.toggle('will-skip', !willRegen);
+
+    let willGenerate;
+    if (hasSelection) {
+      // Selection mode: selected lines with text will be regenerated
+      willGenerate = line.selected && line.text.trim();
+    } else {
+      // No selection: dirty or missing audio will be generated
+      willGenerate = line.dirty || !line.audioBuffer;
     }
+
+    el.classList.toggle('will-generate', willGenerate);
+    el.classList.toggle('will-skip', !willGenerate);
   });
 }
 
@@ -182,20 +176,14 @@ function clearGeneratePreview() {
   });
 }
 
-dom.generateBtn.addEventListener('mouseenter', () => applyGeneratePreview('generate'));
+dom.generateBtn.addEventListener('mouseenter', applyGeneratePreview);
 dom.generateBtn.addEventListener('mouseleave', clearGeneratePreview);
-dom.regenerateSelectedBtn.addEventListener('mouseenter', () => applyGeneratePreview('regenerate'));
-dom.regenerateSelectedBtn.addEventListener('mouseleave', clearGeneratePreview);
 
 // If the script re-renders mid-hover (e.g. text edit), re-apply preview classes
 if (dom.scriptLines) {
   new MutationObserver(() => {
-    if (dom.scriptLines.classList.contains('generate-hover')) {
-      // Re-apply after re-render: detect which button is hovered
-      if (dom.generateBtn.matches(':hover')) applyGeneratePreview('generate');
-      else if (dom.regenerateSelectedBtn.matches(':hover')) applyGeneratePreview('regenerate');
-      else clearGeneratePreview();
-    }
+    if (dom.generateBtn.matches(':hover')) applyGeneratePreview();
+    else clearGeneratePreview();
   }).observe(dom.scriptLines, { childList: true });
 }
 

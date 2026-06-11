@@ -157,7 +157,7 @@ function mergeLineBuffers() {
   return merged;
 }
 
-// ===== Full Generate (skip clean lines) =====
+// ===== Full Generate (context-aware: selected lines or all dirty) =====
 export async function generate() {
   if (isGenerating) return;
 
@@ -165,8 +165,11 @@ export async function generate() {
   if (!valid.length) { setStatus('Add some script lines first!', 'error'); return; }
   if (!speakers.length) { setStatus('Add at least one speaker!', 'error'); return; }
 
-  const dirty = valid.filter(l => l.dirty || !l.audioBuffer);
-  if (!dirty.length) {
+  // If lines are selected, only regenerate those
+  const selected = valid.filter(l => l.selected);
+  const targets = selected.length ? selected : valid.filter(l => l.dirty || !l.audioBuffer);
+
+  if (!targets.length) {
     const merged = mergeLineBuffers();
     if (merged) {
       setStatus(`All ${valid.length} lines already generated — playing`);
@@ -175,7 +178,11 @@ export async function generate() {
     return merged;
   }
 
-  return runGeneration(dirty, `Generating ${dirty.length} of ${valid.length} lines`);
+  const label = selected.length
+    ? `Regenerating ${targets.length} selected line${targets.length > 1 ? 's' : ''}`
+    : `Generating ${targets.length} of ${valid.length} lines`;
+
+  return runGeneration(targets, label);
 }
 
 // ===== Shared generation runner =====
@@ -224,12 +231,6 @@ export function regenerateLine(id) {
   const line = scriptLines.find(l => l.id === id);
   if (!line || !line.text.trim()) return Promise.resolve(null);
   return runGeneration([line], 'Regenerated');
-}
-
-// ===== Regenerate Selected Lines =====
-export function regenerateSelected(selectedIds) {
-  const toRegen = scriptLines.filter(l => selectedIds.includes(l.id) && l.text.trim());
-  return runGeneration(toRegen, 'Regenerated');
 }
 
 // ===== Playback =====
