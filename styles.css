@@ -555,7 +555,6 @@ body {
 .script-lines::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
 .script-lines::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
 .script-lines { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
-.script-lines::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
 /* Script Line */
 .script-line {
@@ -568,9 +567,10 @@ body {
     border-radius: var(--radius-sm);
     transition: all var(--transition);
     overflow: clip;
+    min-height: 36px;
 }
 
-/* Selection gutter — left-edge strip for click + drag-to-select */
+/* Selection gutter — right-edge strip for click + drag-to-select */
 .line-select-gutter {
     display: flex;
     align-items: center;
@@ -578,7 +578,8 @@ body {
     cursor: pointer;
     background: transparent;
     transition: background var(--transition);
-    box-shadow: inset 1px 0 0 var(--border);
+    border-left: 1px solid var(--border);
+    min-height: 36px;
 }
 
 .line-select-gutter:hover {
