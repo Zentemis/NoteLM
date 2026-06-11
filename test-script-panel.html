@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Panel — Visual & Unit Tests</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            color: #e2e8f0;
+            background: #060a14;
+            min-height: 100vh;
+        }
+
+        .test-runner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .test-runner h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        .test-runner p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+        /* Test result list */
+        .results { list-style: none; padding: 0; }
+        .results li {
+            padding: 0.4rem 0.75rem;
+            margin-bottom: 0.25rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .results li.pass { background: rgba(45, 212, 191, 0.1); color: #2dd4bf; }
+        .results li.fail { background: rgba(248, 113, 113, 0.1); color: #f87171; }
+        .results li.info { background: rgba(148, 163, 184, 0.05); color: #94a3b8; }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #475569;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        /* Live test panel — embedded from the real app */
+        .live-test {
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+        .live-test-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .live-test-header button {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            background: rgba(45, 212, 191, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            color: #2dd4bf;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .live-test-header button:hover { background: rgba(45, 212, 191, 0.2); }
+
+        /* Minimal reproduction of the app layout for testing */
+        .test-app {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            background: #060a14;
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+        .test-header {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .test-script-section {
+            flex: 1 1 0%;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .test-script-header {
+            font-size: 0.7rem;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            flex-shrink: 0;
+        }
+        .test-script-lines {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-height: 0;
+            scrollbar-gutter: stable;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.06) transparent;
+        }
+        .test-script-lines:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 0.35);
+        }
+        .test-footer {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: #475569;
+            flex-shrink: 0;
+        }
+
+        /* Script line row */
+        .test-line {
+            display: flex;
+            align-items: stretch;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 6px;
+            min-height: 32px;
+            overflow: clip;
+        }
+        .test-line-accent {
+            width: 3px;
+            background: #2dd4bf;
+            border-radius: 3px 0 0 3px;
+            flex-shrink: 0;
+            align-self: stretch;
+        }
+        .test-line-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            font-size: 0.6rem;
+            color: #475569;
+            flex-shrink: 0;
+        }
+        .test-line-text {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .test-line-gutter {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255,255,255,0.04);
+            min-width: 20px;
+            align-self: stretch;
+        }
+        .test-gutter-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            flex-shrink: 0;
+            align-self: center;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .test-line:hover .test-gutter-dot { opacity: 1; }
+        .test-gutter-dot.active {
+            background: #2dd4bf;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-runner">
+        <h1>Script Panel — Automated Tests</h1>
+        <p>Validates layout, scrolling, dot centering, and accessibility behavior.</p>
+
+        <div class="section-title">Automated Assertions</div>
+        <ul class="results" id="results"></ul>
+
+        <div class="section-title">Live Visual Test</div>
+        <p>Resize the viewport. The script panel should scroll when lines overflow the footer boundary. Dots should stay centered on every row.</p>
+
+        <div class="live-test">
+            <div class="live-test-header">
+                <span>Interactive panel</span>
+                <button id="addLines">+ 10 lines</button>
+                <button id="clearLines">Clear</button>
+                <button id="addMultiline">+ multiline</button>
+            </div>
+            <div class="test-app" id="testApp">
+                <div class="test-header">Header (fixed height)</div>
+                <div class="test-script-section">
+                    <div class="test-script-header">Script</div>
+                    <div class="test-script-lines" id="testLines" tabindex="0" role="region" aria-label="Script lines"></div>
+                </div>
+                <div class="test-footer" id="testFooter">Footer — this should never be overlapped by the script panel.</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+        const testLines = document.getElementById('testLines');
+        const testFooter = document.getElementById('testFooter');
+        const testSection = testLines.closest('.test-script-section');
+
+        function pass(msg) {
+            const li = document.createElement('li');
+            li.className = 'pass';
+            li.textContent = `✓ ${msg}`;
+            results.appendChild(li);
+        }
+        function fail(msg) {
+            const li = document.createElement('li');
+            li.className = 'fail';
+            li.textContent = `✗ ${msg}`;
+            results.appendChild(li);
+        }
+        function info(msg) {
+            const li = document.createElement('li');
+            li.className = 'info';
+            li.textContent = `ℹ ${msg}`;
+            results.appendChild(li);
+        }
+
+        function assert(condition, msg) {
+            condition ? pass(msg) : fail(msg);
+        }
+
+        // ---- Test Helpers ----
+        function addLines(count, multiline = false) {
+            for (let i = 0; i < count; i++) {
+                const div = document.createElement('div');
+                div.className = 'test-line';
+                const text = multiline
+                    ? `Line ${testLines.children.length + 1}: This is a longer text that should wrap to multiple lines when the container is narrow enough, demonstrating multiline behavior with the gutter dot staying centered vertically.`
+                    : `Line ${testLines.children.length + 1}: Short text.`;
+                div.innerHTML = `
+                    <div class="test-line-accent"></div>
+                    <div class="test-line-number">${testLines.children.length + 1}</div>
+                    <div class="test-line-text">${text}</div>
+                    <div class="test-line-gutter"><div class="test-gutter-dot"></div></div>
+                `;
+                testLines.appendChild(div);
+            }
+        }
+
+        function clearLines() {
+            testLines.innerHTML = '';
+        }
+
+        // ---- Height Manager (same logic as production) ----
+        const MIN_HEIGHT = 80;
+        const MAX_HEIGHT_CAP = 900;
+        const SAFE_GAP = 12;
+        let currentMax = 0;
+
+        function recalculate() {
+            const sectionRect = testSection.getBoundingClientRect();
+            const footerRect = testFooter.getBoundingClientRect();
+            let available;
+            if (footerRect.top > 0) {
+                available = footerRect.top - sectionRect.top - SAFE_GAP;
+            } else {
+                available = testSection.clientHeight - SAFE_GAP;
+            }
+            const clamped = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT_CAP, Math.round(available)));
+            if (clamped !== currentMax) {
+                currentMax = clamped;
+                testLines.style.maxHeight = clamped + 'px';
+            }
+        }
+
+        // Observe
+        const ro = new ResizeObserver(() => recalculate());
+        ro.observe(testFooter);
+        window.addEventListener('resize', recalculate);
+
+        new MutationObserver(() => recalculate()).observe(testLines, { childList: true, subtree: true });
+
+        // Initial
+        requestAnimationFrame(() => {
+            recalculate();
+            requestAnimationFrame(recalculate);
+        });
+
+        // ---- Run Tests ----
+        function runTests() {
+            results.innerHTML = '';
+            info(`Viewport: ${window.innerWidth}×${window.innerHeight}`);
+
+            // Test 1: Panel has max-height set
+            const maxHeight = parseInt(getComputedStyle(testLines).maxHeight);
+            assert(maxHeight > 0, `Panel max-height is set (${maxHeight}px)`);
+
+            // Test 2: Panel max-height >= MIN_HEIGHT
+            assert(maxHeight >= MIN_HEIGHT, `Panel max-height >= MIN_HEIGHT (${MIN_HEIGHT}px)`);
+
+            // Test 3: Footer is not overlapped
+            const footerRect = testFooter.getBoundingClientRect();
+            const linesRect = testLines.getBoundingClientRect();
+            assert(linesRect.bottom <= footerRect.top + SAFE_GAP + 2,
+                `Panel bottom (${Math.round(linesRect.bottom)}) ≤ footer top (${Math.round(footerRect.top)})`);
+
+            // Test 4: Scroll container has overflow-y: auto
+            const overflow = getComputedStyle(testLines).overflowY;
+            assert(overflow === 'auto', `Scroll container overflow-y is "${overflow}" (expected "auto")`);
+
+            // Test 5: scrollbar-gutter is stable
+            const gutter = getComputedStyle(testLines).scrollbarGutter;
+            assert(gutter === 'stable', `scrollbar-gutter is "${gutter}" (expected "stable")`);
+
+            // Test 6: Gutter dot centering — check that dot's center Y ≈ row's center Y
+            const lineEls = testLines.querySelectorAll('.test-line');
+            if (lineEls.length > 0) {
+                const row = lineEls[0];
+                const dot = row.querySelector('.test-gutter-dot');
+                const rowRect = row.getBoundingClientRect();
+                const dotRect = dot.getBoundingClientRect();
+                const rowCenter = rowRect.top + rowRect.height / 2;
+                const dotCenter = dotRect.top + dotRect.height / 2;
+                const offset = Math.abs(rowCenter - dotCenter);
+                assert(offset < 3, `Dot vertically centered (offset: ${offset.toFixed(1)}px)`);
+            } else {
+                info('No lines to test dot centering');
+            }
+
+            // Test 7: Multiline row — dot still centered
+            clearLines();
+            addLines(1, true);
+            requestAnimationFrame(() => {
+                const row = testLines.querySelector('.test-line');
+                if (row) {
+                    const dot = row.querySelector('.test-gutter-dot');
+                    const rowRect = row.getBoundingClientRect();
+                    const dotRect = dot.getBoundingClientRect();
+                    const rowCenter = rowRect.top + rowRect.height / 2;
+                    const dotCenter = dotRect.top + dotRect.height / 2;
+                    const offset = Math.abs(rowCenter - dotCenter);
+                    assert(offset < 3, `Multiline dot centered (offset: ${offset.toFixed(1)}px)`);
+                    assert(rowRect.height > 40, `Multiline row height > 40px (${Math.round(rowRect.height)}px)`);
+                }
+
+                // Test 8: Keyboard focusable
+                assert(testLines.hasAttribute('tabindex'), 'Scroll container has tabindex');
+                assert(testLines.getAttribute('role') === 'region', 'Scroll container has role="region"');
+                assert(testLines.hasAttribute('aria-label'), 'Scroll container has aria-label');
+
+                // Test 9: flex-shrink on gutter dot
+                const dot = testLines.querySelector('.test-gutter-dot');
+                if (dot) {
+                    const shrink = getComputedStyle(dot).flexShrink;
+                    assert(shrink === '0', `Gutter dot flex-shrink is "${shrink}" (expected "0")`);
+                }
+
+                // Test 10: line-text min-width
+                const textEl = testLines.querySelector('.test-line-text');
+                if (textEl) {
+                    const minWidth = getComputedStyle(textEl).minWidth;
+                    assert(minWidth === '0px', `Line text min-width is "${minWidth}" (expected "0px")`);
+                }
+
+                // Restore test lines
+                clearLines();
+                addLines(6);
+                recalculate();
+            });
+        }
+
+        // ---- Button handlers ----
+        document.getElementById('addLines').addEventListener('click', () => {
+            addLines(10);
+            recalculate();
+            setTimeout(runTests, 50);
+        });
+        document.getElementById('clearLines').addEventListener('click', () => {
+            clearLines();
+            recalculate();
+            setTimeout(runTests, 50);
+        });
+        document.getElementById('addMultiline').addEventListener('click', () => {
+            addLines(3, true);
+            recalculate();
+            setTimeout(runTests, 50);
+        });
+
+        // Run initial tests after layout settles
+        addLines(6);
+        recalculate();
+        setTimeout(runTests, 100);
+    </script>
+</body>
+</html>
