@@ -27,17 +27,16 @@ export function toggleLineSelect(id, shiftKey) {
   if (idx === -1) return;
 
   if (shiftKey && lastSelectedIndex !== -1) {
-    // Range select: toggle all lines between lastSelectedIndex and idx
     const start = Math.min(lastSelectedIndex, idx);
     const end = Math.max(lastSelectedIndex, idx);
-    const targetState = !scriptLines[idx].selected; // match the target's new state
+    scriptLines.forEach(l => { l.selected = false; });
     for (let i = start; i <= end; i++) {
-      scriptLines[i].selected = targetState;
+      scriptLines[i].selected = true;
     }
   } else {
     scriptLines[idx].selected = !scriptLines[idx].selected;
+    lastSelectedIndex = idx;
   }
-  lastSelectedIndex = idx;
   renderScriptLines();
   updateSelectionUI();
 }
