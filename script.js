@@ -11,7 +11,7 @@ import { addSpeaker, renderSpeakers } from './speakers.js';
 import { drawMiniWaveform } from './waveform.js';
 
 // ===== Selection State =====
-let lastSelectedIndex = -1;
+let anchorIndex = -1;
 
 export function getSelectedLines() {
   return scriptLines.filter(l => l.selected);
@@ -19,24 +19,29 @@ export function getSelectedLines() {
 
 export function clearSelection() {
   scriptLines.forEach(l => { l.selected = false; });
-  lastSelectedIndex = -1;
+  anchorIndex = -1;
+  renderScriptLines();
+  updateSelectionUI();
 }
 
 export function toggleLineSelect(id, shiftKey) {
   const idx = scriptLines.findIndex(l => l.id === id);
   if (idx === -1) return;
 
-  if (shiftKey && lastSelectedIndex !== -1) {
-    const start = Math.min(lastSelectedIndex, idx);
-    const end = Math.max(lastSelectedIndex, idx);
+  if (shiftKey && anchorIndex !== -1) {
+    // Shift+click: select range from anchor to clicked
+    const start = Math.min(anchorIndex, idx);
+    const end = Math.max(anchorIndex, idx);
     scriptLines.forEach(l => { l.selected = false; });
     for (let i = start; i <= end; i++) {
       scriptLines[i].selected = true;
     }
   } else {
+    // Normal click: toggle this line, set as anchor
     scriptLines[idx].selected = !scriptLines[idx].selected;
-    lastSelectedIndex = idx;
+    anchorIndex = idx;
   }
+
   renderScriptLines();
   updateSelectionUI();
 }
@@ -144,10 +149,7 @@ export function renderScriptLines() {
           ${durationHtml}
           ${playBtn}
           ${regenBtn}
-          <label class="line-select-col" data-select="${line.id}">
-            <input type="checkbox" class="line-checkbox" ${line.selected ? 'checked' : ''} />
-            <span class="line-checkbox-visual"></span>
-          </label>
+          <div class="line-checkbox${line.selected ? ' checked' : ''}" data-select="${line.id}" role="checkbox" tabindex="0" aria-checked="${line.selected}" aria-label="Select line ${i + 1}"></div>
           <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
         </div>
       </div>
@@ -189,12 +191,19 @@ export function renderScriptLines() {
     btn.addEventListener('click', () => removeScriptLine(btn.dataset.remove));
   });
 
-  // Checkbox selection — listen on label (not hidden checkbox) for shift+click
-  dom.scriptLines.querySelectorAll('.line-select-col').forEach(label => {
-    label.addEventListener('click', e => {
+  // Checkbox — pure div, no native checkbox
+  dom.scriptLines.querySelectorAll('.line-checkbox').forEach(el => {
+    el.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      toggleLineSelect(label.dataset.select, e.shiftKey);
+      toggleLineSelect(el.dataset.select, e.shiftKey);
+    });
+    // Keyboard support
+    el.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggleLineSelect(el.dataset.select, e.shiftKey);
+      }
     });
   });
 
