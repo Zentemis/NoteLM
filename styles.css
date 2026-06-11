@@ -583,42 +583,6 @@ body {
     border-radius: var(--radius-sm);
 }
 
-/* Scroll shadow pseudo-elements — hidden by default */
-.script-lines::before,
-.script-lines::after {
-    content: '';
-    position: sticky;
-    display: block;
-    flex-shrink: 0;
-    height: 0;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    pointer-events: none;
-    z-index: 2;
-}
-
-/* Top shadow — shown when scrolled down */
-.script-lines::before {
-    top: 0;
-    background: linear-gradient(to bottom, var(--bg-deep) 0%, transparent 100%);
-}
-.script-lines[data-scroll-shadow="top"]::before,
-.script-lines[data-scroll-shadow="both"]::before {
-    height: 24px;
-    opacity: 1;
-}
-
-/* Bottom shadow — shown when more content below */
-.script-lines::after {
-    bottom: 0;
-    background: linear-gradient(to top, var(--bg-deep) 0%, transparent 100%);
-}
-.script-lines[data-scroll-shadow="bottom"]::after,
-.script-lines[data-scroll-shadow="both"]::after {
-    height: 24px;
-    opacity: 1;
-}
-
 /* Script Line — flex row for reliable vertical centering of all children */
 .script-line {
     display: flex;

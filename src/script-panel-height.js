@@ -61,20 +61,7 @@ function recalculateLayout() {
     scrollContainer.style.maxHeight = clamped + 'px';
   }
 
-  updateScrollShadows();
-}
 
-/** Toggle scroll-shadow data-attr based on scroll position. */
-function updateScrollShadows() {
-  if (!scrollContainer) return;
-  const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-  const atTop = scrollTop < 2;
-  const atBottom = scrollTop + clientHeight >= scrollHeight - 2;
-  scrollContainer.dataset.scrollShadow = atTop
-    ? 'bottom'
-    : atBottom
-      ? 'top'
-      : 'both';
 }
 
 /** Observe textarea sizes — recalculate when they grow/shrink. */
@@ -129,10 +116,7 @@ export function initScrollPanelHeightManager() {
   scrollContainer.setAttribute('role', 'region');
   scrollContainer.setAttribute('aria-label', 'Script lines — scroll to navigate');
 
-  // Initial shadow state
-  scrollContainer.dataset.scrollShadow = 'bottom';
-
-  // Scroll listener — update shadows on user scroll (throttled via debounce)
+  // Scroll listener
   scrollHandler = scheduleRecalc;
   scrollContainer.addEventListener('scroll', scrollHandler, { passive: true });
 
