@@ -11,7 +11,8 @@ import { addSpeaker, renderSpeakers } from './speakers.js';
 import { drawMiniWaveform } from './waveform.js';
 
 // ===== Selection State =====
-let anchorIndex = -1;
+let isDragging = false;
+let dragAnchorIdx = -1;
 
 export function getSelectedLines() {
   return scriptLines.filter(l => l.selected);
@@ -19,31 +20,70 @@ export function getSelectedLines() {
 
 export function clearSelection() {
   scriptLines.forEach(l => { l.selected = false; });
-  anchorIndex = -1;
+  dragAnchorIdx = -1;
   renderScriptLines();
   updateSelectionUI();
 }
 
-export function toggleLineSelect(id, shiftKey) {
-  const idx = scriptLines.findIndex(l => l.id === id);
-  if (idx === -1) return;
-
-  if (shiftKey && anchorIndex !== -1) {
-    // Shift+click: select range from anchor to clicked
-    const start = Math.min(anchorIndex, idx);
-    const end = Math.max(anchorIndex, idx);
-    scriptLines.forEach(l => { l.selected = false; });
-    for (let i = start; i <= end; i++) {
-      scriptLines[i].selected = true;
-    }
-  } else {
-    // Normal click: toggle this line, set as anchor
-    scriptLines[idx].selected = !scriptLines[idx].selected;
-    anchorIndex = idx;
+function getLineIdxFromPoint(y) {
+  const gutters = dom.scriptLines.querySelectorAll('.line-select-gutter');
+  for (let i = 0; i < gutters.length; i++) {
+    const rect = gutters[i].getBoundingClientRect();
+    if (y >= rect.top && y <= rect.bottom) return i;
   }
+  return -1;
+}
 
-  renderScriptLines();
+function selectRangeExclusive(fromIdx, toIdx) {
+  const start = Math.min(fromIdx, toIdx);
+  const end = Math.max(fromIdx, toIdx);
+  scriptLines.forEach(l => { l.selected = false; });
+  for (let i = start; i <= end; i++) {
+    if (scriptLines[i]) scriptLines[i].selected = true;
+  }
   updateSelectionUI();
+  updateGutterVisuals();
+}
+
+function updateGutterVisuals() {
+  dom.scriptLines.querySelectorAll('.line-select-gutter').forEach((g, i) => {
+    const line = scriptLines[i];
+    g.classList.toggle('selected', line?.selected ?? false);
+    const dot = g.querySelector('.gutter-dot');
+    if (dot) dot.classList.toggle('selected', line?.selected ?? false);
+  });
+}
+
+function handleGutterMouseDown(e) {
+  e.preventDefault();
+  const idx = parseInt(this.dataset.idx, 10);
+  if (isNaN(idx)) return;
+
+  isDragging = true;
+  dragAnchorIdx = idx;
+
+  // Toggle this line on click
+  scriptLines[idx].selected = !scriptLines[idx].selected;
+  updateSelectionUI();
+  updateGutterVisuals();
+
+  document.addEventListener('mousemove', handleGutterDragMove);
+  document.addEventListener('mouseup', handleGutterDragEnd);
+}
+
+function handleGutterDragMove(e) {
+  if (!isDragging || dragAnchorIdx === -1) return;
+  const idx = getLineIdxFromPoint(e.clientY);
+  if (idx === -1 || idx === dragAnchorIdx) return;
+
+  // Dragging: select range from anchor to current (exclusive of toggle)
+  selectRangeExclusive(dragAnchorIdx, idx);
+}
+
+function handleGutterDragEnd() {
+  isDragging = false;
+  document.removeEventListener('mousemove', handleGutterDragMove);
+  document.removeEventListener('mouseup', handleGutterDragEnd);
 }
 
 function updateSelectionUI() {
@@ -137,7 +177,8 @@ export function renderScriptLines() {
       : '';
 
     return `
-      <div class="script-line${line._active ? ' active' : ''}${line.selected ? ' selected' : ''}${isEmpty ? ' empty' : ''}" data-id="${line.id}">
+      <div class="script-line${line._active ? ' active' : ''}${line.selected ? ' selected' : ''}${isEmpty ? ' empty' : ''}" data-id="${line.id}" data-idx="${i}">
+        <div class="line-select-gutter${line.selected ? ' selected' : ''}" data-gutter-idx="${i}"><div class="gutter-dot${line.selected ? ' selected' : ''}"></div></div>
         <div class="line-accent" style="background:${color}"></div>
         <span class="line-number">${statusDot}${i + 1}</span>
         <select class="line-speaker-select" data-lid="${line.id}">
@@ -149,7 +190,6 @@ export function renderScriptLines() {
           ${durationHtml}
           ${playBtn}
           ${regenBtn}
-          <div class="line-checkbox${line.selected ? ' checked' : ''}" data-select="${line.id}" role="checkbox" tabindex="0" aria-checked="${line.selected}" aria-label="Select line ${i + 1}"></div>
           <button class="line-remove" data-remove="${line.id}" title="Remove">×</button>
         </div>
       </div>
@@ -191,20 +231,9 @@ export function renderScriptLines() {
     btn.addEventListener('click', () => removeScriptLine(btn.dataset.remove));
   });
 
-  // Checkbox — pure div, no native checkbox
-  dom.scriptLines.querySelectorAll('.line-checkbox').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleLineSelect(el.dataset.select, e.shiftKey);
-    });
-    // Keyboard support
-    el.addEventListener('keydown', e => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        toggleLineSelect(el.dataset.select, e.shiftKey);
-      }
-    });
+  // Selection gutters — click to toggle, drag to select range
+  dom.scriptLines.querySelectorAll('.line-select-gutter').forEach(gutter => {
+    gutter.addEventListener('mousedown', handleGutterMouseDown);
   });
 
   // Play single line

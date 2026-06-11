@@ -450,7 +450,7 @@ body {
 /* Script Line */
 .script-line {
     display: grid;
-    grid-template-columns: 3px 2.5rem 120px 1fr auto;
+    grid-template-columns: 20px 3px 2.5rem 120px 1fr auto;
     gap: 0;
     align-items: stretch;
     background: var(--bg-surface);
@@ -460,46 +460,47 @@ body {
     overflow: hidden;
 }
 
-/* Selection checkbox — pure div, show on hover or when selected */
-.line-checkbox {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 1.5px solid var(--border);
-    background: transparent;
+/* Selection gutter — left-edge strip for click + drag-to-select */
+.line-select-gutter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: all var(--transition);
-    position: relative;
+    background: transparent;
+    transition: background var(--transition);
+    border-right: 1px solid var(--border);
 }
 
-.script-line:hover .line-checkbox,
-.script-line.selected .line-checkbox,
-.line-checkbox.checked {
+.line-select-gutter:hover {
+    background: rgba(45, 212, 191, 0.06);
+}
+
+.line-select-gutter.selected {
+    background: rgba(45, 212, 191, 0.1);
+}
+
+.gutter-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all var(--transition);
+    opacity: 0;
+}
+
+.script-line:hover .gutter-dot,
+.gutter-dot.selected {
     opacity: 1;
 }
 
-.line-checkbox:hover {
-    border-color: var(--accent);
-    background: rgba(45, 212, 191, 0.08);
-}
-
-.line-checkbox.checked {
+.gutter-dot:hover {
     background: var(--accent);
-    border-color: var(--accent);
+    transform: scale(1.3);
 }
 
-.line-checkbox.checked::after {
-    content: '';
-    position: absolute;
-    top: 1px;
-    left: 4px;
-    width: 4px;
-    height: 8px;
-    border: solid #060a14;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+.gutter-dot.selected {
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-dim);
 }
 
 
