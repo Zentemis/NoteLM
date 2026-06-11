@@ -8,7 +8,7 @@ import {
   speakers, scriptLines, currentAudioBuffer,
   audioContext, isPlaying, playStartTime, playOffset,
   animFrameId, openEditorId, dom,
-  setStatus, fmtTime, setAnimFrameId,
+  setStatus, fmtTime, setAnimFrameId, setCurrentAudioBuffer,
 } from './state.js';
 import {
   addSpeaker, renderSpeakers, closeEditor,
@@ -16,67 +16,20 @@ import {
 import {
   addScriptLine, renderScriptLines,
   openPasteModal, closePasteModal, parseAndImport,
-  loadExample,
+  loadExample, clearSelection, getSelectedLines,
 } from './script.js';
 import {
-  generate, playAudio, pauseAudio, stopPlayback,
+  generate, regenerateLine, regenerateSelected,
+  playAudio, pauseAudio, stopPlayback, ensureAudioContext,
   seekTo, downloadWav,
 } from './audio.js';
+import { drawMainWaveform } from './waveform.js';
 
-// ===== Waveform (interactive) =====
+// ===== Interactive waveform (main player) =====
 let waveformSamples = null;
 
-function drawWaveform(samples, progress = 0) {
-  waveformSamples = samples;
-  const canvas = dom.waveformCanvas;
-  const ctx = canvas.getContext('2d');
-  const dpr = devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  ctx.scale(dpr, dpr);
-
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  const step = Math.ceil(samples.length / w);
-
-  ctx.clearRect(0, 0, w, h);
-
-  for (let i = 0; i < w; i++) {
-    let min = 1, max = -1;
-    for (let j = 0; j < step; j++) {
-      const v = samples[i * step + j];
-      if (v !== undefined) { if (v < min) min = v; if (v > max) max = v; }
-    }
-    const y1 = (1 + min) * h / 2;
-    const y2 = (1 + max) * h / 2;
-    const height = Math.max(y2 - y1, 1);
-
-    const played = i / w <= progress;
-    if (played) {
-      const grad = ctx.createLinearGradient(0, y1, 0, y1 + height);
-      grad.addColorStop(0, 'rgba(45, 212, 191, 0.7)');
-      grad.addColorStop(0.5, 'rgba(45, 212, 191, 1.0)');
-      grad.addColorStop(1, 'rgba(45, 212, 191, 0.7)');
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = 'rgba(45, 212, 191, 0.25)';
-    }
-    ctx.fillRect(i, y1, 1, height);
-  }
-
-  // Playhead
-  if (progress > 0) {
-    const x = Math.round(progress * w);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x - 1, 0, 2, h);
-  }
-}
-
-function getWaveformProgress() {
-  if (!currentAudioBuffer || !audioContext) return 0;
-  const elapsed = isPlaying
-    ? (playOffset + audioContext.currentTime - playStartTime)
-    : playOffset;
-  return Math.min(elapsed / currentAudioBuffer.duration, 1);
+function renderMainWaveform(progress = 0) {
+  if (waveformSamples) drawMainWaveform(dom.waveformCanvas, waveformSamples, progress);
 }
 
 function tickSeekBar() {
@@ -87,11 +40,10 @@ function tickSeekBar() {
   const dur = currentAudioBuffer.duration;
   const pct = Math.min((elapsed / dur) * 100, 100);
   dom.timeDisplay.textContent = fmtTime(elapsed);
-  if (waveformSamples) drawWaveform(waveformSamples, pct / 100);
+  renderMainWaveform(pct / 100);
   if (isPlaying) setAnimFrameId(requestAnimationFrame(tickSeekBar));
 }
 
-// ===== Waveform click-to-seek =====
 function initWaveformInteraction() {
   const canvas = dom.waveformCanvas;
   let dragging = false;
@@ -100,7 +52,7 @@ function initWaveformInteraction() {
     const rect = canvas.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 100;
     seekTo(pct);
-    if (waveformSamples) drawWaveform(waveformSamples, pct / 100);
+    renderMainWaveform(pct / 100);
   };
 
   canvas.addEventListener('mousedown', e => {
@@ -108,23 +60,32 @@ function initWaveformInteraction() {
     dragging = true;
     seekFromEvent(e);
   });
-
-  document.addEventListener('mousemove', e => {
-    if (dragging) seekFromEvent(e);
-  });
-
+  document.addEventListener('mousemove', e => { if (dragging) seekFromEvent(e); });
   document.addEventListener('mouseup', () => { dragging = false; });
 }
 
-// ===== Generate handler (UI + audio) =====
+// ===== Shared: play merged samples after generation =====
+function playMerged(merged) {
+  if (!merged) return;
+  waveformSamples = merged;
+  renderMainWaveform();
+  playAudio();
+  setAnimFrameId(requestAnimationFrame(tickSeekBar));
+}
+
+// ===== Handlers =====
 async function handleGenerate() {
   const merged = await generate();
-  if (merged) {
-    drawWaveform(merged);
-    playAudio();
-    // Start the seek bar ticker
-    setAnimFrameId(requestAnimationFrame(tickSeekBar));
-  }
+  playMerged(merged);
+}
+
+async function handleRegenerateSelected() {
+  const selected = getSelectedLines();
+  if (!selected.length) return;
+  const ids = selected.map(l => l.id);
+  clearSelection();
+  const merged = await regenerateSelected(ids);
+  playMerged(merged);
 }
 
 // ===== Event Bindings =====
@@ -136,13 +97,37 @@ dom.generateBtn.onclick = handleGenerate;
 dom.stopBtn.onclick = stopPlayback;
 dom.downloadBtn.onclick = downloadWav;
 dom.playPauseBtn.onclick = () => {
-  if (isPlaying) {
-    pauseAudio();
-  } else {
-    playAudio();
-    setAnimFrameId(requestAnimationFrame(tickSeekBar));
-  }
+  if (isPlaying) { pauseAudio(); }
+  else { playAudio(); setAnimFrameId(requestAnimationFrame(tickSeekBar)); }
 };
+
+// Selection bar
+dom.regenerateSelectedBtn.onclick = handleRegenerateSelected;
+dom.clearSelectionBtn.onclick = () => { clearSelection(); renderScriptLines(); };
+
+// Play single line (dispatched from script.js)
+document.addEventListener('playLine', e => {
+  const line = scriptLines.find(l => l.id === e.detail.id);
+  if (!line || !line.audioBuffer) return;
+
+  const ac = ensureAudioContext();
+  const buf = ac.createBuffer(1, line.audioBuffer.length, CONFIG.sampleRate);
+  buf.getChannelData(0).set(line.audioBuffer);
+
+  stopPlayback();
+  setCurrentAudioBuffer(buf);
+
+  waveformSamples = line.audioBuffer;
+  renderMainWaveform();
+  playAudio();
+  setAnimFrameId(requestAnimationFrame(tickSeekBar));
+});
+
+// Regenerate single line (dispatched from script.js)
+document.addEventListener('regenerateLine', async e => {
+  const merged = await regenerateLine(e.detail.id);
+  playMerged(merged);
+});
 
 // Paste modal
 dom.pasteScriptBtn.addEventListener('click', openPasteModal);
@@ -153,8 +138,7 @@ dom.pasteOverlay.addEventListener('mousedown', e => {
 });
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && e.target.id === 'pasteTextarea') {
-    e.preventDefault();
-    parseAndImport();
+    e.preventDefault(); parseAndImport();
   }
 });
 
@@ -163,8 +147,7 @@ document.addEventListener('mousedown', e => {
   if (!openEditorId) return;
   const portal = dom.editorPortal;
   if (portal && !portal.contains(e.target) && !e.target.closest('.speaker-chip')) {
-    closeEditor();
-    renderSpeakers();
+    closeEditor(); renderSpeakers();
   }
 });
 

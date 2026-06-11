@@ -16,7 +16,7 @@ import {
   setAnimFrameId, setIsGenerating, setKokoroModel,
   setDetectedDevice,
 } from './state.js';
-import { renderScriptLines } from './script.js';
+import { renderScriptLines, markLineDirty } from './script.js';
 
 // ===== Backend Detection =====
 export async function detectBackend() {
@@ -101,7 +101,62 @@ export async function loadModel() {
   }
 }
 
-// ===== TTS Generation =====
+// ===== AudioContext Helper =====
+export function ensureAudioContext() {
+  if (!audioContext) setAudioContext(new (window.AudioContext || window.webkitAudioContext)());
+  if (audioContext.state === 'suspended') audioContext.resume();
+  return audioContext;
+}
+
+// ===== Generate Single Line (stores buffer on line object) =====
+async function generateLineAudio(model, line, index, total) {
+  const spk = getSpeaker(line.speakerId);
+  const pct = Math.round((index / total) * 100);
+
+  dom.progressBar.style.width = pct + '%';
+  dom.progressText.textContent = `Line ${index + 1}/${total} — ${spk?.name || '?'}`;
+
+  scriptLines.forEach(l => l._active = l.id === line.id);
+  renderScriptLines();
+
+  const audio = await model.generate(line.text, { voice: spk?.voice || 'af_heart' });
+  const samples = audio.audio;
+
+  // Store per-line data (single source of truth — audioBuffer holds the Float32Array)
+  line.audioBuffer = samples;
+  line.duration = samples.length / CONFIG.sampleRate;
+  line.dirty = false;
+
+  return samples;
+}
+
+// ===== Merge All Line Buffers =====
+function mergeLineBuffers() {
+  const ac = ensureAudioContext();
+  const chunks = [];
+  const valid = scriptLines.filter(l => l.text.trim() && l.audioBuffer);
+
+  for (let i = 0; i < valid.length; i++) {
+    chunks.push(valid[i].audioBuffer);
+    if (i < valid.length - 1) {
+      chunks.push(new Float32Array(Math.floor(CONFIG.sampleRate * CONFIG.lineGap)));
+    }
+  }
+
+  if (!chunks.length) return null;
+
+  const total = chunks.reduce((s, c) => s + c.length, 0);
+  const merged = new Float32Array(total);
+  let off = 0;
+  for (const c of chunks) { merged.set(c, off); off += c.length; }
+
+  const buf = ac.createBuffer(1, merged.length, CONFIG.sampleRate);
+  buf.getChannelData(0).set(merged);
+  setCurrentAudioBuffer(buf);
+  return merged;
+}
+
+// ===== Full Generate (skip clean lines) =====
 export async function generate() {
   if (isGenerating) return;
 
@@ -109,58 +164,47 @@ export async function generate() {
   if (!valid.length) { setStatus('Add some script lines first!', 'error'); return; }
   if (!speakers.length) { setStatus('Add at least one speaker!', 'error'); return; }
 
+  // Determine which lines need generation
+  const dirty = valid.filter(l => l.dirty || !l.audioBuffer);
+  if (!dirty.length) {
+    // All clean — just merge and play
+    const merged = mergeLineBuffers();
+    if (merged) {
+      setStatus(`All ${valid.length} lines already generated — playing`);
+      dom.audioPlayer.style.display = 'flex';
+      dom.downloadBtn.disabled = false;
+    }
+    return merged;
+  }
+
   setIsGenerating(true);
   dom.generateBtn.disabled = true;
   dom.downloadBtn.disabled = true;
   dom.stopBtn.disabled = false;
   dom.progressSection.style.display = 'flex';
   dom.audioPlayer.style.display = 'none';
-  setStatus('Generating…', 'loading');
+  setStatus(`Generating ${dirty.length} of ${valid.length} lines…`, 'loading');
 
   try {
     const model = await loadModel();
 
-    const chunks = [];
-    for (let i = 0; i < valid.length; i++) {
-      const line = valid[i];
-      const spk = getSpeaker(line.speakerId);
-      const pct = Math.round((i / valid.length) * 100);
-
-      dom.progressBar.style.width = pct + '%';
-      dom.progressText.textContent = `Line ${i + 1}/${valid.length} — ${spk?.name || '?'}`;
-
-      scriptLines.forEach(l => l._active = l.id === line.id);
-      renderScriptLines();
-
-      const audio = await model.generate(line.text, { voice: spk?.voice || 'af_heart' });
-      chunks.push(audio.audio);
-
-      if (i < valid.length - 1) {
-        chunks.push(new Float32Array(Math.floor(CONFIG.sampleRate * CONFIG.lineGap)));
-      }
+    for (let i = 0; i < dirty.length; i++) {
+      await generateLineAudio(model, dirty[i], i, dirty.length);
     }
-
-    // Merge chunks into one Float32Array
-    const total = chunks.reduce((s, c) => s + c.length, 0);
-    const merged = new Float32Array(total);
-    let off = 0;
-    for (const c of chunks) { merged.set(c, off); off += c.length; }
-
-    if (!audioContext) setAudioContext(new (window.AudioContext || window.webkitAudioContext)());
-    const buf = audioContext.createBuffer(1, merged.length, CONFIG.sampleRate);
-    buf.getChannelData(0).set(merged);
-    setCurrentAudioBuffer(buf);
 
     scriptLines.forEach(l => l._active = false);
     renderScriptLines();
+
+    // Merge all line buffers (clean + newly generated)
+    const merged = mergeLineBuffers();
 
     dom.progressBar.style.width = '100%';
     dom.progressText.textContent = 'Done!';
     dom.audioPlayer.style.display = 'flex';
     dom.downloadBtn.disabled = false;
-    setStatus(`Generated ${valid.length} lines`);
+    setStatus(`Generated ${dirty.length} lines · ${valid.length} total`);
 
-    return merged; // Return raw samples for waveform drawing
+    return merged;
   } catch (err) {
     setStatus('Error: ' + err.message, 'error');
     dom.progressText.textContent = 'Error';
@@ -170,6 +214,56 @@ export async function generate() {
     dom.generateBtn.disabled = false;
     dom.stopBtn.disabled = true;
   }
+}
+
+// ===== Shared generation runner =====
+async function runGeneration(lines, label) {
+  if (isGenerating || !lines.length) return null;
+
+  setIsGenerating(true);
+  dom.generateBtn.disabled = true;
+  dom.stopBtn.disabled = false;
+  dom.progressSection.style.display = 'flex';
+  setStatus(`${label} ${lines.length} line${lines.length > 1 ? 's' : ''}…`, 'loading');
+
+  try {
+    const model = await loadModel();
+    for (let i = 0; i < lines.length; i++) {
+      await generateLineAudio(model, lines[i], i, lines.length);
+    }
+    scriptLines.forEach(l => l._active = false);
+    renderScriptLines();
+
+    const merged = mergeLineBuffers();
+    if (merged) {
+      dom.audioPlayer.style.display = 'flex';
+      dom.downloadBtn.disabled = false;
+    }
+    dom.progressBar.style.width = '100%';
+    dom.progressText.textContent = 'Done!';
+    setStatus(`${label} ${lines.length} line${lines.length > 1 ? 's' : ''} — done`);
+    return merged;
+  } catch (err) {
+    setStatus('Error: ' + err.message, 'error');
+    return null;
+  } finally {
+    setIsGenerating(false);
+    dom.generateBtn.disabled = false;
+    dom.stopBtn.disabled = true;
+  }
+}
+
+// ===== Regenerate Single Line =====
+export function regenerateLine(id) {
+  const line = scriptLines.find(l => l.id === id);
+  if (!line || !line.text.trim()) return Promise.resolve(null);
+  return runGeneration([line], 'Regenerated');
+}
+
+// ===== Regenerate Selected Lines =====
+export function regenerateSelected(selectedIds) {
+  const toRegen = scriptLines.filter(l => selectedIds.includes(l.id) && l.text.trim());
+  return runGeneration(toRegen, 'Regenerated');
 }
 
 // ===== Playback =====
@@ -188,8 +282,7 @@ function createBufferSource() {
 
 export function playAudio() {
   if (!currentAudioBuffer) return;
-  if (!audioContext) setAudioContext(new (window.AudioContext || window.webkitAudioContext)());
-  if (audioContext.state === 'suspended') audioContext.resume();
+  ensureAudioContext();
   stopPlayback();
 
   const source = createBufferSource();
