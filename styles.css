@@ -1016,6 +1016,52 @@ body {
     line-height: 1.5;
 }
 
+/* ---- Footer ---- */
+.site-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.footer-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--transition);
+}
+.footer-link:hover { color: var(--accent); }
+
+.footer-dot { opacity: 0.4; }
+.footer-text { font-size: 0.75rem; }
+
+/* ---- Privacy Page ---- */
+.privacy-back {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.privacy-commitment {
+    margin-top: 1.5rem;
+    padding: 2rem 2.5rem;
+}
+
+.privacy-commitment h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+}
+
+.privacy-commitment p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
     .app { padding: 1rem 0.75rem 7rem; }
