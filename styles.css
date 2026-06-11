@@ -529,7 +529,6 @@ body {
     min-height: 0;
     overflow: hidden;
 }
-}
 
 .script-header {
     display: flex;
@@ -547,13 +546,15 @@ body {
     flex-direction: column;
     gap: 0.35rem;
     padding-right: 0.25rem;
+    padding-bottom: 0.5rem;
     min-height: 0;
-    padding-bottom: 1rem;
 }
 
-.script-lines::-webkit-scrollbar { width: 5px; }
+.script-lines::-webkit-scrollbar { width: 6px; }
 .script-lines::-webkit-scrollbar-track { background: transparent; }
 .script-lines::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+.script-lines::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+.script-lines { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
 .script-lines::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
 /* Script Line */
