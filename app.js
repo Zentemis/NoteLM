@@ -24,7 +24,7 @@ import {
   seekTo, downloadWav,
 } from './audio.js';
 import { drawMainWaveform } from './waveform.js';
-import { initScrollPanelHeightManager } from './src/script-panel-height.js';
+import { initScrollPanelHeightManager } from './script-panel-height.js';
 
 // ===== Interactive waveform (main player) =====
 let waveformSamples = null;

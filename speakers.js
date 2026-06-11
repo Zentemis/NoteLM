@@ -179,6 +179,7 @@ export function closeEditor() {
 }
 
 export async function renderSpeakers() {
+  if (!dom.speakersList) return;
   dom.speakersList.innerHTML = speakers.map(s => `
     <div class="speaker-chip${openEditorId === s.id ? ' active' : ''}" data-chip-id="${s.id}">
       <span class="chip-dot" style="background:${s.color}"></span>

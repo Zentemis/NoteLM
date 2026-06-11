@@ -4,7 +4,7 @@
 
 ### How the height manager works
 
-`src/script-panel-height.js` measures the distance from `.script-section`'s top to `.site-footer`'s top on every relevant size change, then sets `max-height` on `.script-lines` so it expands with content until it would overlap the footer, then shows a native scrollbar.
+`script-panel-height.js` measures the distance from `.script-section`'s top to `.site-footer`'s top on every relevant size change, then sets `max-height` on `.script-lines` so it expands with content until it would overlap the footer, then shows a native scrollbar.
 
 ### Where to hook
 
@@ -20,7 +20,7 @@
 
 ### Configuring min/max heights
 
-Edit the constants at the top of `src/script-panel-height.js`:
+Edit the constants at the top of `script-panel-height.js`:
 
 | Constant       | Default | Purpose                                     |
 |----------------|---------|---------------------------------------------|

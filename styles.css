@@ -507,7 +507,7 @@ body {
     padding-right: 0.25rem;
     padding-bottom: 0.5rem;
     min-height: 0;
-    /* max-height is set dynamically by src/script-panel-height.js */
+    /* max-height is set dynamically by script-panel-height.js */
     scrollbar-gutter: stable;
 }
 

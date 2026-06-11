@@ -10,7 +10,7 @@ import {
 import { addSpeaker, renderSpeakers } from './speakers.js';
 import { ICON } from './icons.js';
 import { drawMiniWaveform } from './waveform.js';
-import { onScriptLinesRendered } from './src/script-panel-height.js';
+import { onScriptLinesRendered } from './script-panel-height.js';
 
 // ===== Selection State =====
 let isDragging = false;
@@ -139,9 +139,46 @@ export function updateLineSpeakerOptions() {
   });
 }
 
+// ===== Event Delegation (set up once) =====
+let delegationBound = false;
+
+function bindScriptLineEvents() {
+  if (delegationBound || !dom.scriptLines) return;
+  delegationBound = true;
+
+  // Single click handler — covers remove, play, regenerate
+  dom.scriptLines.addEventListener('click', e => {
+    const removeBtn = e.target.closest('.line-remove');
+    if (removeBtn) { removeScriptLine(removeBtn.dataset.remove); return; }
+
+    const playBtn = e.target.closest('.line-play');
+    if (playBtn) { e.stopPropagation(); document.dispatchEvent(new CustomEvent('playLine', { detail: { id: playBtn.dataset.playLine } })); return; }
+
+    const regenBtn = e.target.closest('.line-regen');
+    if (regenBtn) { e.stopPropagation(); document.dispatchEvent(new CustomEvent('regenerateLine', { detail: { id: regenBtn.dataset.regen } })); return; }
+  });
+
+  // Speaker select changes
+  dom.scriptLines.addEventListener('change', e => {
+    const sel = e.target.closest('.line-speaker-select');
+    if (!sel) return;
+    const line = scriptLines.find(l => l.id === sel.dataset.lid);
+    if (line) { line.speakerId = sel.value; markLineDirty(line.id); }
+    renderScriptLines();
+  });
+
+  // Gutter drag-to-select (mousedown bubbles, mousemove/mouseup are on document)
+  dom.scriptLines.addEventListener('mousedown', e => {
+    const gutter = e.target.closest('.line-select-gutter');
+    if (!gutter) return;
+    handleGutterMouseDown.call(gutter, e);
+  });
+}
+
 // ===== Render =====
 export function renderScriptLines() {
   if (!dom.scriptLines) return;
+  bindScriptLineEvents();
   dom.scriptLines.innerHTML = scriptLines.map((line, i) => {
     const spk = getSpeaker(line.speakerId);
     const color = spk?.color || '#475569';
@@ -199,62 +236,15 @@ export function renderScriptLines() {
     `;
   }).join('');
 
-  // Resize textareas
+  // Auto-resize textareas + mark dirty on text input (input events don't bubble)
   dom.scriptLines.querySelectorAll('.line-textarea').forEach(ta => {
     const resize = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
-    ta.addEventListener('input', resize);
+    ta.addEventListener('input', () => {
+      resize();
+      const line = scriptLines.find(l => l.id === ta.dataset.lid);
+      if (line) { line.text = ta.value; markLineDirty(line.id); }
+    });
     resize();
-  });
-
-  // Speaker change → mark dirty
-  dom.scriptLines.querySelectorAll('.line-speaker-select').forEach(sel => {
-    sel.addEventListener('change', e => {
-      const line = scriptLines.find(l => l.id === e.target.dataset.lid);
-      if (line) {
-        line.speakerId = e.target.value;
-        markLineDirty(line.id);
-      }
-      renderScriptLines();
-    });
-  });
-
-  // Text input → mark dirty
-  dom.scriptLines.querySelectorAll('.line-textarea').forEach(ta => {
-    ta.addEventListener('input', e => {
-      const line = scriptLines.find(l => l.id === e.target.dataset.lid);
-      if (line) {
-        line.text = e.target.value;
-        markLineDirty(line.id);
-      }
-    });
-  });
-
-  // Remove buttons
-  dom.scriptLines.querySelectorAll('.line-remove').forEach(btn => {
-    btn.addEventListener('click', () => removeScriptLine(btn.dataset.remove));
-  });
-
-  // Selection gutters — click to toggle, drag to select range
-  dom.scriptLines.querySelectorAll('.line-select-gutter').forEach(gutter => {
-    gutter.addEventListener('mousedown', handleGutterMouseDown);
-  });
-
-  // Play single line
-  dom.scriptLines.querySelectorAll('.line-play').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const event = new CustomEvent('playLine', { detail: { id: btn.dataset.playLine } });
-      document.dispatchEvent(event);
-    });
-  });
-
-  // Regenerate single line
-  dom.scriptLines.querySelectorAll('.line-regen').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const event = new CustomEvent('regenerateLine', { detail: { id: btn.dataset.regen } });
-      document.dispatchEvent(event);
-    });
   });
 
   // Draw mini waveforms
@@ -267,8 +257,6 @@ export function renderScriptLines() {
   });
 
   updateSelectionUI();
-
-  // Notify panel height manager to re-observe textareas and recalculate
   onScriptLinesRendered();
 }
 
