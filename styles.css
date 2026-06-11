@@ -107,6 +107,7 @@ body {
     gap: 1rem;
     min-height: 100vh;
     height: 100vh;
+    overflow: hidden;
 }
 
 /* ---- Glass Panel ---- */
@@ -525,7 +526,9 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0.75rem 1rem 1rem;
-    min-height: 400px;
+    min-height: 0;
+    overflow: hidden;
+}
 }
 
 .script-header {
@@ -544,13 +547,14 @@ body {
     flex-direction: column;
     gap: 0.35rem;
     padding-right: 0.25rem;
-    min-height: 300px;
-    max-height: calc(100vh - 280px);
+    min-height: 0;
+    padding-bottom: 1rem;
 }
 
 .script-lines::-webkit-scrollbar { width: 5px; }
 .script-lines::-webkit-scrollbar-track { background: transparent; }
 .script-lines::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+.script-lines::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
 /* Script Line */
 .script-line {
@@ -562,7 +566,7 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     transition: all var(--transition);
-    overflow: hidden;
+    overflow: clip;
 }
 
 /* Selection gutter — left-edge strip for click + drag-to-select */
@@ -573,7 +577,7 @@ body {
     cursor: pointer;
     background: transparent;
     transition: background var(--transition);
-    border-left: 1px solid var(--border);
+    box-shadow: inset 1px 0 0 var(--border);
 }
 
 .line-select-gutter:hover {
@@ -592,6 +596,7 @@ body {
     transition: all var(--transition);
     opacity: 0;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .script-line:hover .gutter-dot,
