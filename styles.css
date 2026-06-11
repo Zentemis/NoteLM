@@ -607,6 +607,20 @@ body {
 .script-line:hover { border-color: var(--border-hover); }
 .script-line.active { border-color: var(--accent); box-shadow: 0 0 16px var(--accent-dim); }
 
+/* Generate hover preview — activated by .generate-hover on container */
+.generate-hover .script-line {
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+.generate-hover .script-line.will-generate {
+    opacity: 1;
+    border-color: var(--accent);
+    background: rgba(45, 212, 191, 0.06);
+}
+.generate-hover .script-line.will-skip {
+    opacity: 0.4;
+    border-color: transparent;
+}
+
 .line-accent {
     width: 3px;
     align-self: stretch;

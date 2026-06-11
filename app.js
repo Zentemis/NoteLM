@@ -152,6 +152,53 @@ document.addEventListener('mousedown', e => {
   }
 });
 
+// ===== Generate Hover Preview =====
+function applyGeneratePreview(mode) {
+  if (!dom.scriptLines) return;
+  dom.scriptLines.classList.add('generate-hover');
+  const lineEls = dom.scriptLines.querySelectorAll('.script-line');
+  lineEls.forEach(el => {
+    const line = scriptLines.find(l => l.id === el.dataset.id);
+    if (!line) return;
+    if (mode === 'generate') {
+      // Highlight lines that will be generated, dim those that will be skipped
+      const willGenerate = line.dirty || !line.audioBuffer;
+      el.classList.toggle('will-generate', willGenerate);
+      el.classList.toggle('will-skip', !willGenerate);
+    } else if (mode === 'regenerate') {
+      // Highlight selected lines that will be regenerated, dim everything else
+      const willRegen = line.selected && line.text.trim();
+      el.classList.toggle('will-generate', willRegen);
+      el.classList.toggle('will-skip', !willRegen);
+    }
+  });
+}
+
+function clearGeneratePreview() {
+  if (!dom.scriptLines) return;
+  dom.scriptLines.classList.remove('generate-hover');
+  dom.scriptLines.querySelectorAll('.script-line').forEach(el => {
+    el.classList.remove('will-generate', 'will-skip');
+  });
+}
+
+dom.generateBtn.addEventListener('mouseenter', () => applyGeneratePreview('generate'));
+dom.generateBtn.addEventListener('mouseleave', clearGeneratePreview);
+dom.regenerateSelectedBtn.addEventListener('mouseenter', () => applyGeneratePreview('regenerate'));
+dom.regenerateSelectedBtn.addEventListener('mouseleave', clearGeneratePreview);
+
+// If the script re-renders mid-hover (e.g. text edit), re-apply preview classes
+if (dom.scriptLines) {
+  new MutationObserver(() => {
+    if (dom.scriptLines.classList.contains('generate-hover')) {
+      // Re-apply after re-render: detect which button is hovered
+      if (dom.generateBtn.matches(':hover')) applyGeneratePreview('generate');
+      else if (dom.regenerateSelectedBtn.matches(':hover')) applyGeneratePreview('regenerate');
+      else clearGeneratePreview();
+    }
+  }).observe(dom.scriptLines, { childList: true });
+}
+
 // ===== Init =====
 initWaveformInteraction();
 initScrollPanelHeightManager();
