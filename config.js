@@ -3,15 +3,15 @@
 // ============================================
 
 export const LANGUAGES = {
-  'en-us':  { name: 'English (US)', code: 'US' },
-  'en-gb':  { name: 'English (UK)', code: 'UK' },
-  'ja':     { name: 'Japanese', code: 'JA' },
-  'zh':     { name: 'Mandarin', code: 'ZH' },
-  'es':     { name: 'Spanish', code: 'ES' },
-  'fr-fr':  { name: 'French', code: 'FR' },
-  'hi':     { name: 'Hindi', code: 'HI' },
-  'it':     { name: 'Italian', code: 'IT' },
-  'pt-br':  { name: 'Portuguese', code: 'PT' },
+  'en-us':  { name: 'English (US)', code: 'US', flag: '🇺🇸' },
+  'en-gb':  { name: 'English (UK)', code: 'UK', flag: '🇬🇧' },
+  'ja':     { name: 'Japanese', code: 'JA', flag: '🇯🇵' },
+  'zh':     { name: 'Mandarin', code: 'ZH', flag: '🇨🇳' },
+  'es':     { name: 'Spanish', code: 'ES', flag: '🇪🇸' },
+  'fr-fr':  { name: 'French', code: 'FR', flag: '🇫🇷' },
+  'hi':     { name: 'Hindi', code: 'HI', flag: '🇮🇳' },
+  'it':     { name: 'Italian', code: 'IT', flag: '🇮🇹' },
+  'pt-br':  { name: 'Portuguese', code: 'PT', flag: '🇧🇷' },
 };
 
 export const CONFIG = {

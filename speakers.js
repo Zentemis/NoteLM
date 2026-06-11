@@ -83,8 +83,7 @@ function renderSpeakerEditor(speaker) {
   const currentLang = CONFIG.voices[speaker.voice]?.lang || null;
   if (editorLangFilter === null) editorLangFilter = currentLang;
 
-  // Get unique languages that have voices
-  const availableLangs = [...new Set(VOICE_KEYS.map(k => CONFIG.voices[k].lang))];
+  const langInfo = LANGUAGES[editorLangFilter] || LANGUAGES['en-us'];
 
   portal.innerHTML = `
     <div class="editor-arrow"></div>
@@ -95,12 +94,16 @@ function renderSpeakerEditor(speaker) {
     <div class="editor-field">
       <div class="editor-label-row">
         <span class="editor-label">Voice</span>
-        <div class="lang-filter" id="langFilter">
-          ${availableLangs.map(lang => {
-            const info = LANGUAGES[lang] || { code: lang.toUpperCase() };
-            const isActive = editorLangFilter === lang;
-            return `<button class="lang-pill${isActive ? ' active' : ''}" data-lang="${lang}">${info.code}</button>`;
-          }).join('')}
+        <button class="lang-flag-btn" id="langFlagBtn" title="${langInfo.name}">
+          ${langInfo.flag}
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+          ${Object.entries(LANGUAGES).map(([key, lang]) =>
+            `<button class="lang-option${key === editorLangFilter ? ' active' : ''}" data-lang="${key}">
+              <span class="lang-option-flag">${lang.flag}</span>
+              <span class="lang-option-name">${lang.name}</span>
+            </button>`
+          ).join('')}
         </div>
       </div>
       <select class="editor-select" id="editorVoiceSelect"></select>
@@ -119,18 +122,42 @@ function renderSpeakerEditor(speaker) {
   };
   nameInput.onchange = () => renderSpeakers();
 
-  // Language filter pill handlers
-  portal.querySelectorAll('.lang-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const lang = pill.dataset.lang;
-      editorLangFilter = editorLangFilter === lang ? null : lang;
-      // Update pill active states
-      portal.querySelectorAll('.lang-pill').forEach(p => {
-        p.classList.toggle('active', editorLangFilter === p.dataset.lang);
+  // Flag button — toggle dropdown
+  const flagBtn = document.getElementById('langFlagBtn');
+  const dropdown = document.getElementById('langDropdown');
+
+  flagBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  // Language option handlers
+  dropdown.querySelectorAll('.lang-option').forEach(opt => {
+    opt.addEventListener('click', e => {
+      e.stopPropagation();
+      const lang = opt.dataset.lang;
+      editorLangFilter = lang;
+      dropdown.classList.remove('open');
+      // Update flag button
+      flagBtn.textContent = LANGUAGES[lang].flag;
+      flagBtn.title = LANGUAGES[lang].name;
+      // Update active state
+      dropdown.querySelectorAll('.lang-option').forEach(o => {
+        o.classList.toggle('active', o.dataset.lang === lang);
       });
       renderVoiceSelect(speaker, portal);
     });
   });
+
+  // Close dropdown when clicking outside
+  const closeDropdown = e => {
+    if (!dropdown.contains(e.target) && e.target !== flagBtn) {
+      dropdown.classList.remove('open');
+    }
+  };
+  document.addEventListener('click', closeDropdown);
+  // Clean up on next editor render
+  portal._cleanupDropdown = () => document.removeEventListener('click', closeDropdown);
 
   nameInput.focus();
 }
@@ -139,7 +166,11 @@ export function closeEditor() {
   setOpenEditorId(null);
   editorLangFilter = null;
   const portal = dom.editorPortal;
-  if (portal) { portal.style.display = 'none'; portal.innerHTML = ''; }
+  if (portal) {
+    if (portal._cleanupDropdown) { portal._cleanupDropdown(); portal._cleanupDropdown = null; }
+    portal.style.display = 'none';
+    portal.innerHTML = '';
+  }
 }
 
 export async function renderSpeakers() {

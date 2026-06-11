@@ -389,38 +389,85 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    position: relative;
 }
 
-.lang-filter {
-    display: flex;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-}
-
-.lang-pill {
+.lang-flag-btn {
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
-    color: var(--text-muted);
-    font-family: var(--font-body);
-    font-size: 0.55rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    padding: 0.15rem 0.4rem;
+    font-size: 0.9rem;
+    padding: 0.15rem 0.35rem;
     cursor: pointer;
     transition: all var(--transition);
     line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
-.lang-pill:hover {
+.lang-flag-btn:hover {
     border-color: var(--border-hover);
-    color: var(--text-secondary);
+    transform: scale(1.1);
 }
 
-.lang-pill.active {
+.lang-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    background: rgba(10, 15, 30, 0.98);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.3rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    z-index: 10;
+    min-width: 170px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.lang-dropdown.open {
+    display: flex;
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.lang-option:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.lang-option.active {
     background: var(--accent-dim);
     border-color: var(--accent);
     color: var(--accent);
+}
+
+.lang-option-flag {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.lang-option-name {
+    line-height: 1;
 }
 
 .editor-input,
