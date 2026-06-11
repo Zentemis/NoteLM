@@ -384,6 +384,45 @@ body {
     color: var(--text-muted);
 }
 
+.editor-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.lang-filter {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.lang-pill {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.4rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    line-height: 1;
+}
+
+.lang-pill:hover {
+    border-color: var(--border-hover);
+    color: var(--text-secondary);
+}
+
+.lang-pill.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
 .editor-input,
 .editor-select {
     background: rgba(255,255,255,0.04);
