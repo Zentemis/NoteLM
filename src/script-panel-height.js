@@ -10,7 +10,7 @@
 // Integration: call initScrollPanelHeightManager() once on DOMContentLoaded,
 //              then call onScriptLinesRendered() after every renderScriptLines().
 
-import { dom } from './state.js';
+import { dom } from '../state.js';
 
 const DEBOUNCE_MS = 100;
 const MIN_HEIGHT = 120;   // px — minimum usable scroll height
