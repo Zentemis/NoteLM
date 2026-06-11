@@ -480,12 +480,13 @@ body {
 }
 
 .gutter-dot {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: var(--border);
     transition: all var(--transition);
     opacity: 0;
+    cursor: pointer;
 }
 
 .script-line:hover .gutter-dot,

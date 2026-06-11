@@ -56,7 +56,7 @@ function updateGutterVisuals() {
 
 function handleGutterMouseDown(e) {
   e.preventDefault();
-  const idx = parseInt(this.dataset.idx, 10);
+  const idx = parseInt(this.dataset.gutterIdx, 10);
   if (isNaN(idx)) return;
 
   isDragging = true;
