@@ -179,14 +179,6 @@ function clearGeneratePreview() {
 dom.generateBtn.addEventListener('mouseenter', applyGeneratePreview);
 dom.generateBtn.addEventListener('mouseleave', clearGeneratePreview);
 
-// If the script re-renders mid-hover (e.g. text edit), re-apply preview classes
-if (dom.scriptLines) {
-  new MutationObserver(() => {
-    if (dom.generateBtn.matches(':hover')) applyGeneratePreview();
-    else clearGeneratePreview();
-  }).observe(dom.scriptLines, { childList: true });
-}
-
 // ===== Init =====
 initWaveformInteraction();
 initScrollPanelHeightManager();
