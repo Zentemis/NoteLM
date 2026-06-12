@@ -799,10 +799,10 @@ body {
 
 .btn-glass.btn-danger:hover { border-color: var(--error); color: var(--error); background: var(--error-dim); }
 
-.btn-glass.btn-regenerate {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
+.btn-regenerate {
+    padding: 0.45rem 0.55rem;
     display: none;
+    vertical-align: middle;
 }
 .btn-glass.btn-regenerate:not(:disabled) {
     display: inline-flex;
