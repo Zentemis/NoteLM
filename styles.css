@@ -609,16 +609,18 @@ body {
 
 /* Generate hover preview — activated by .generate-hover on container */
 .generate-hover .script-line {
-    transition: opacity 0.2s ease, border-color 0.2s ease;
+    transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 .generate-hover .script-line.will-generate {
     opacity: 1;
     border-color: var(--accent);
-    background: rgba(45, 212, 191, 0.06);
+    background: rgba(45, 212, 191, 0.12);
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.15);
 }
 .generate-hover .script-line.will-skip {
-    opacity: 0.4;
+    opacity: 0.35;
     border-color: transparent;
+    background: transparent;
 }
 
 .line-accent {
@@ -796,6 +798,15 @@ body {
 .btn-glass:hover { border-color: var(--border-hover); color: var(--text-primary); background: var(--bg-surface-hover); }
 
 .btn-glass.btn-danger:hover { border-color: var(--error); color: var(--error); background: var(--error-dim); }
+
+.btn-glass.btn-regenerate {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    display: none;
+}
+.btn-glass.btn-regenerate:not(:disabled) {
+    display: inline-flex;
+}
 
 .btn-primary {
     display: inline-flex;
