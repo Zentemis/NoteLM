@@ -19,7 +19,7 @@ import {
   loadExample, clearSelection,
 } from './script.js';
 import {
-  generate, regenerateLine,
+  generate, regenerateSelected, regenerateLine,
   playAudio, pauseAudio, stopPlayback, ensureAudioContext,
   seekTo, downloadWav,
 } from './audio.js';
@@ -86,6 +86,10 @@ dom.addLineBtn.onclick = () => addScriptLine();
 dom.clearScriptBtn.onclick = () => { scriptLines.length = 0; renderScriptLines(); };
 dom.loadExampleBtn.onclick = loadExample;
 dom.generateBtn.onclick = handleGenerate;
+dom.regenerateSelectedBtn.onclick = async () => {
+  const merged = await regenerateSelected();
+  playMerged(merged);
+};
 dom.stopBtn.onclick = stopPlayback;
 dom.downloadBtn.onclick = downloadWav;
 dom.playPauseBtn.onclick = () => {
@@ -147,22 +151,30 @@ function applyGeneratePreview() {
   if (!dom.scriptLines) return;
   dom.scriptLines.classList.add('generate-hover');
 
-  const selected = scriptLines.filter(l => l.selected && l.text.trim());
-  const hasSelection = selected.length > 0;
+  const hasSelection = scriptLines.some(l => l.selected && l.text.trim());
 
   dom.scriptLines.querySelectorAll('.script-line').forEach(el => {
     const line = scriptLines.find(l => l.id === el.dataset.id);
     if (!line) return;
 
-    let willGenerate;
-    if (hasSelection) {
-      // Selection mode: selected lines with text will be regenerated
-      willGenerate = line.selected && line.text.trim();
-    } else {
-      // No selection: dirty or missing audio will be generated
-      willGenerate = line.dirty || !line.audioBuffer;
-    }
+    // Generate always processes: dirty/unbuffered lines + selected lines
+    const willGenerate = line.dirty || !line.audioBuffer || (hasSelection && line.selected && line.text.trim());
 
+    el.classList.toggle('will-generate', willGenerate);
+    el.classList.toggle('will-skip', !willGenerate);
+  });
+}
+
+function applyRegeneratePreview() {
+  if (!dom.scriptLines) return;
+  dom.scriptLines.classList.add('generate-hover');
+
+  // Regenerate only processes selected lines
+  dom.scriptLines.querySelectorAll('.script-line').forEach(el => {
+    const line = scriptLines.find(l => l.id === el.dataset.id);
+    if (!line) return;
+
+    const willGenerate = line.selected && line.text.trim();
     el.classList.toggle('will-generate', willGenerate);
     el.classList.toggle('will-skip', !willGenerate);
   });
@@ -178,6 +190,8 @@ function clearGeneratePreview() {
 
 dom.generateBtn.addEventListener('mouseenter', applyGeneratePreview);
 dom.generateBtn.addEventListener('mouseleave', clearGeneratePreview);
+dom.regenerateSelectedBtn.addEventListener('mouseenter', applyRegeneratePreview);
+dom.regenerateSelectedBtn.addEventListener('mouseleave', clearGeneratePreview);
 
 // ===== Init =====
 initWaveformInteraction();

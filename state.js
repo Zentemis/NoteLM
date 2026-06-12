@@ -49,6 +49,7 @@ export const dom = {
   pasteCancelBtn:  $('#pasteCancelBtn'),
   pasteParseBtn:   $('#pasteParseBtn'),
   generateBtn:     $('#generateBtn'),
+  regenerateSelectedBtn: $('#regenerateSelectedBtn'),
   downloadBtn:     $('#downloadBtn'),
   stopBtn:         $('#stopBtn'),
   progressSection: $('#progressSection'),

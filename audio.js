@@ -165,9 +165,12 @@ export async function generate() {
   if (!valid.length) { setStatus('Add some script lines first!', 'error'); return; }
   if (!speakers.length) { setStatus('Add at least one speaker!', 'error'); return; }
 
-  // If lines are selected, only regenerate those
+  // Generate: dirty/unbuffered lines + selected lines (union)
   const selected = valid.filter(l => l.selected);
-  const targets = selected.length ? selected : valid.filter(l => l.dirty || !l.audioBuffer);
+  const dirty = valid.filter(l => l.dirty || !l.audioBuffer);
+  // Union: selected lines always included, plus any dirty/unbuffered lines
+  const targetIds = new Set([...selected.map(l => l.id), ...dirty.map(l => l.id)]);
+  const targets = valid.filter(l => targetIds.has(l.id));
 
   if (!targets.length) {
     const merged = mergeLineBuffers();
@@ -178,9 +181,7 @@ export async function generate() {
     return merged;
   }
 
-  const label = selected.length
-    ? `Regenerating ${targets.length} selected line${targets.length > 1 ? 's' : ''}`
-    : `Generating ${targets.length} of ${valid.length} lines`;
+  const label = `Generating ${targets.length} of ${valid.length} lines`;
 
   return runGeneration(targets, label);
 }
@@ -231,6 +232,19 @@ export function regenerateLine(id) {
   const line = scriptLines.find(l => l.id === id);
   if (!line || !line.text.trim()) return Promise.resolve(null);
   return runGeneration([line], 'Regenerated');
+}
+
+// ===== Regenerate Selected Lines Only =====
+export async function regenerateSelected() {
+  if (isGenerating) return;
+
+  const selected = scriptLines.filter(l => l.selected && l.text.trim());
+  if (!selected.length) {
+    setStatus('Select lines first to regenerate', 'error');
+    return null;
+  }
+
+  return runGeneration(selected, `Regenerating ${selected.length} selected line${selected.length > 1 ? 's' : ''}`);
 }
 
 // ===== Playback =====

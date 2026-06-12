@@ -95,6 +95,11 @@ function updateSelectionUI() {
   bar.style.display = count > 0 ? 'flex' : 'none';
   const label = bar.querySelector('.selection-count');
   if (label) label.textContent = `${count} selected`;
+
+  // Enable/disable regenerate button based on selection
+  if (dom.regenerateSelectedBtn) {
+    dom.regenerateSelectedBtn.disabled = count === 0;
+  }
 }
 
 export function markLineDirty(id) {
